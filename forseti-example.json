@@ -1,0 +1,75 @@
+{
+    "autoscale": {
+        "configs": {
+            "frontend": {
+                "security_groups": ["security-group"],
+                "instance_type": "m1.small",
+                "key_name": "private-keys",
+                "instance_monitoring": true
+            }
+        },
+        "groups": {
+            "frontend": {
+                "availability_zones": ["eu-west-1a", "eu-west-1b", "eu-west-1c"],
+                "desired_capacity": 1,
+                "max_size": 10,
+                "min_size": 1,
+                "load_balancers": ["frontent-balancer"],
+                "default_cooldown": 300,
+                "termination_policies": ["ClosestToNextInstanceHour", "OldestInstance"]
+            }
+        },
+        "policies": {
+            "scale_up_policy": {
+                "adjustment_type": "ChangeInCapacity",
+                "scaling_adjustment": 3,
+                "cooldown": 180
+            },
+            "scale_down_policy": {
+                "adjustment_type": "ChangeInCapacity",
+                "scaling_adjustment": -1,
+                "cooldown": 180
+            }
+        },
+        "alarms": {
+            "scale_up_on_cpu": {
+                "namespace": "AWS/EC2",
+                "metric": "CPUUtilization",
+                "statistic": "Average",
+                "comparison": ">",
+                "threshold": "60",
+                "period": "60",
+                "evaluation_periods": 1,
+                "alarm_actions": "scale_up_policy"
+            },
+            "scale_down_on_cpu": {
+                "namespace": "AWS/EC2",
+                "metric": "CPUUtilization",
+                "statistic": "Average",
+                "comparison": "<",
+                "threshold": "40",
+                "period": "300",
+                "evaluation_periods": 2,
+                "alarm_actions": "scale_down_policy"
+            }
+        }
+    },
+    "applications": {
+        "api": {
+            "autoscale_group": "frontend",
+            "elb": "frontent-balancer",
+            "gold": {
+                "image_id": "ami-00000000",
+                "key_name": "private-keys",
+                "security_groups": ["group-with-ssh-access-from-where-you-run-forseti"],
+                "instance_type": "t1.micro",
+                "provision": {
+                    "username": "ubuntu",
+                    "key_filename": "/home/user/.ssh/private-keys.pem",
+                    "working_directory": "/home/user/frontend/deploy",
+                    "command": "cap production deploy -S servers={dns_name}"
+                }
+            }
+        }
+    }
+}
