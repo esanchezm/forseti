@@ -38,7 +38,9 @@ class Forseti(object):
         new_ami_id = self.ami_from_gold_instance(application)
         print "New AMI from gold image %s" % (new_ami_id)
         self.configure_autoscale(application, new_ami_id)
-        balloon.finish("Total time")
+        balloon.finish()
+        minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
+        print "Total deployment time: %02d:%02d" % (minutes, seconds)
 
     def configure_autoscale(self, application, ami_id):
         self.autoscale_properties = self.aws_properties['autoscale']
