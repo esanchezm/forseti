@@ -2,140 +2,98 @@
 # -*- coding: utf-8 -*-
 
 import os
-from datetime import datetime
 import time
-from boto.ec2.connection import EC2Connection
-from boto.ec2.autoscale import AutoScaleConnection, AutoScalingGroup, LaunchConfiguration, ScalingPolicy, Tag
-from boto.ec2.cloudwatch import CloudWatchConnection, MetricAlarm
-from boto.ec2.elb import ELBConnection
+
+from forseti.base import (
+    CloudWatch,
+    EC2,
+    EC2AutoScale,
+    ELB,
+)
+from forseti.utils import Balloon
+from forseti.exceptions import EC2InstanceException
+from boto.ec2.autoscale import (
+    AutoScalingGroup,
+    LaunchConfiguration,
+    ScalingPolicy,
+    Tag,
+)
+from boto.ec2.cloudwatch import MetricAlarm
+
 import paramiko
-# import fish  # We will use fish soon ;)
-import progressbar
-
-
-# class Duck(fish.SwimFishTimeSync, fish.DuckLook):
-#     pass
-
-
-class Balloon(progressbar.ProgressBar):
-    def __init__(self, message="Waiting"):
-        widgets = [message+" ", progressbar.AnimatedMarker(markers='.oO@* '),
-                   progressbar.Timer(format=" %s")]
-        super(Balloon, self).__init__(widgets=widgets)
-        self.start()
-
-    # def finish(self, time_message="Time"):
-    #     super(Balloon, self).finish()
-    #     minutes, seconds = divmod(int(self.seconds_elapsed), 60)
-    #     print "%s: %02d:%02d" % (time_message, minutes, seconds)
-
-
-class EC2(object):
-    """
-    EC2 bae class
-    """
-
-    def __init__(self, configuration, application):
-        self.ec2 = EC2Connection()
-        self.configuration = configuration
-        self.application = application
-        self.resource = None
-        self.version = datetime.today().strftime("%Y-%m-%d-%s")
-
-
-class EC2Autoscale(EC2):
-    """
-    EC2 autoscale base class
-    """
-
-    def __init__(self, name, configuration, application):
-        super(EC2Autoscale, self).__init__(configuration, application)
-        self.autoscale = AutoScaleConnection()
-        self.name = name+"-"+self.version
-
-
-class ELB(EC2):
-    """
-    ELB base class
-    """
-
-    def __init__(self, name, configuration, application):
-        super(ELB, self).__init__(configuration, application)
-        self.elb = ELBConnection()
-        self.name = name
-
-
-class CloudWatch(EC2):
-    """
-    CloudWatch base class
-    """
-
-    def __init__(self, configuration, application):
-        super(CloudWatch, self).__init__(configuration, application)
-        self.cloudwatch = CloudWatchConnection()
 
 
 class EC2Instance(EC2):
-    """docstring for Instance"""
+    """
+    EC2 Instance
+    """
+
     def __init__(self, configuration, application):
         super(EC2Instance, self).__init__(configuration, application)
         self.instance = None
 
     def launch(self):
+        """
+        Start EC2 instance in AWS
+        """
+        print "Starting instance"
         self.resource = self.ec2.run_instances(**self.configuration)
         self.instance = self.resource.instances[0]
 
     def terminate(self):
-        print "Terminating instance %s" % (self.instance.id)
+        """
+        Stop EC2 instance in AWS
+        """
+        print "Terminating instance %s" % self.instance.id
         self.ec2.terminate_instances([self.instance.id])
 
 
-class GoldEC2Instance(EC2Instance):
+class GoldenEC2Instance(EC2Instance):
     """
-    A gold instance is the one which is used as a base to create the
+    A golden instance is the one which is used as a base to create the
     application AMI.
-
-    :param configuration: Parameters to ``boto.ec2.connection.run_instances``.
-    :param application: Application name.
     """
+    TIMEOUT = 2
 
     def __init__(self, configuration, application):
+        """
+        :param configuration: Parameters to ``boto.ec2.connection.run_instances``.
+        :param application: Application name.
+        """
+        # SSH provisioning
         self.provision_configuration = configuration.pop('provision')
         self.ssh_configuration = {
             'username': self.provision_configuration['username'],
             'key_filename': self.provision_configuration['key_filename'],
-            'timeout': 2,
+            'timeout': self.TIMEOUT,
         }
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        super(GoldEC2Instance, self).__init__(configuration, application)
-
+        super(GoldenEC2Instance, self).__init__(configuration, application)
+        # No need to monitor an instance that will be terminated soon
         self.configuration["monitoring_enabled"] = False
 
     def launch_and_wait(self):
         """
-        Launch a gold instance and wait until it's running.
+        Launch a golden instance and wait until it's running.
         """
         self.launch()
+        balloon = Balloon("Golden instance %s launched. Waiting until it's running" % self.instance.id)
 
-        status = self.instance.update()
-        balloon = Balloon("Gold instance %s launched. Waiting until it's running" % (self.instance.id))
         i = 0
-        while status == "pending":
+        while self.instance.update() == "pending":
             balloon.update(i)
             i += 1
             time.sleep(1)
-            status = self.instance.update()
+
         balloon.finish()
 
-        if status == "running":
-            name = "gold-%s-instance-%s" % (self.application, self.version)
-            self.instance.add_tag("Name", name)
+        if self.instance.update() == "running":
+            tag_name = "golden-%s-instance-%s" % (self.application, self.version)
+            self.instance.add_tag("Name", tag_name)
         else:
-            # FIXME: Raise exception
-            print "Gold instance %s could not be launched" % (self.instance.id)
-            return
+            raise EC2InstanceException("Golden instance %s could not be launched" % self.instance.id)
 
     def is_ssh_running(self):
         """
@@ -152,218 +110,247 @@ class GoldEC2Instance(EC2Instance):
         """
         Wait until SSH is running
         """
-        balloon = Balloon("Gold instance %s provisioned. Waiting until SSH is up" % (self.instance.id))
+        balloon = Balloon("Golden instance %s provisioned. Waiting until SSH is up" % self.instance.id)
+
         i = 0
-        status = self.is_ssh_running()
-        while status is False:
+        while not self.is_ssh_running():
             balloon.update(i)
             i += 1
             time.sleep(1)
-            status = self.is_ssh_running()
+
         balloon.finish()
 
     def provision(self):
         """
-        Provision the new application code
+        Provisions machine using `command` specified in configuration file, `command` is
+        executed locally within `working_directory` specified path.
         """
         self.wait_for_ssh()
-        balloon = Balloon("Deployed new code on gold instance %s" % (self.instance.id))
-        command = self.provision_configuration['command'].format(dns_name=self.instance.public_dns_name)
-        directory = os.getcwd()
+        balloon = Balloon("Deployed new code on golden instance %s" % self.instance.id)
+        command = self.provision_configuration['command'].format(
+            dns_name=self.instance.public_dns_name
+        )
+        former_directory = os.getcwd()
         os.chdir(self.provision_configuration['working_directory'])
         os.system(command)
-        os.chdir(directory)
+        os.chdir(former_directory)
         balloon.finish()
 
     def create_image(self):
         """
-        Create an image from the instance.
+        Create an AMI from the golden instance started
         """
-        balloon = Balloon("Gold instance %s creating image" % (self.instance.id))
+        balloon = Balloon("Golden instance %s creating image" % self.instance.id)
 
-        name = "golden-%s-ami-%s" % (self.application, self.version)
-        ami_id = self.instance.create_image(name, name)
+        ami_name = "golden-%s-ami-%s" % (self.application, self.version)
+        ami_id = self.instance.create_image(ami_name, description=ami_name)
+        ami = self.ec2.get_all_images(image_ids=(ami_id,))[0]
 
-        ami = self.ec2.get_all_images(image_ids=[ami_id])[0]
-        status = ami.update()
         i = 0
-        while status == "pending":
+        while ami.update() == "pending":
             balloon.update(i)
             i += 1
             time.sleep(1)
-            status = ami.update()
+
         balloon.finish()
 
-        if status == "available":
-            ami.add_tag("Name", name)
+        if ami.update() == "available":
+            ami.add_tag("Name", ami_name)
         else:
-            # FIXME: Raise exception
-            print "Golden image %s could not be created" % (self.instance.id)
-            return None
+            raise EC2InstanceException("Golden image %s could not be created" % self.instance.id)
 
         return ami_id
 
 
-class EC2AutoscaleConfig(EC2Autoscale):
+class EC2AutoScaleConfig(EC2AutoScale):
     """
     EC2 autoscale config
     """
 
     def create(self):
+        """
+        Creates a launch configuration using configuration file
+        """
         launch_configuration = LaunchConfiguration(name=self.name, **self.configuration)
         self.resource = self.autoscale.create_launch_configuration(launch_configuration)
 
 
-class EC2AutoscaleGroup(EC2Autoscale):
+class EC2AutoScaleGroup(EC2AutoScale):
     """
     EC2 autoscale group
     """
 
     def __init__(self, name, configuration, application):
-        super(EC2AutoscaleGroup, self).__init__(name, configuration, application)
+        super(EC2AutoScaleGroup, self).__init__(name, configuration, application)
         self.group = None
         self.elb = None
         self.name = name  # Do not add version to the name
 
-    def set_launch_config(self, launch_config):
-        self.configuration["launch_config"] = launch_config.name
-        self.update()
+    def set_launch_configuration(self, launch_configuration):
+        """
+        Sets launch configuration for autoscale group, if group is attached
+        to an existing AWS autoscale group, update its configuration
+        """
+        self.configuration["launch_config"] = launch_configuration.name
 
-    def __get_resource(self):
+        if self.group:
+            self.group.launch_config_name = self.configuration["launch_config"]
+            self.group.update()
+
+    def _get_autoscaling_group(self):
+        """
+        Returns a current `boto.ec2.autoscale.group.AutoScalingGroup` instance associated to
+        the instance of this class
+        """
         return self.autoscale.get_all_groups(names=[self.name])[0]
 
-    def exists(self):
-        try:
-            self.__get_resource()
-        except IndexError:
-            return False
-        return True
-
     def load_balancer(self):
+        """
+        Returns an `ELBBalancer` instance associated to the autoscale group
+        """
         if self.elb is not None:
             return self.elb
-        self.elb = ELBBalancer(self.__get_resource().load_balancers[0], {}, self.application)
+        self.elb = ELBBalancer(self.__get_resource().load_balancers[0], self.application)
         return self.elb
 
-    def instances(self, status='running'):
+    def get_instances_with_status(self, status):
         """
-        Get number of instances running
+        Get a list of instances in this autoscale group whose status matches `status`
         """
-        group = self.__get_resource()
-        instances_id = [i.instance_id for i in group.instances]
+        instances_ids = [instance.instance_id for instance in self._get_autoscaling_group()]
+
+        if not instances_ids:
+            return []
+
         instances = []
-        if len(instances_id) is 0:
-            return instances
-        instance_states = self.ec2.get_all_instance_status(instances_id)
-        for state in instance_states:
+        instances_states = self.ec2.get_all_instance_status(instances_ids)
+        for state in instances_states:
             if state.state_name == status:
                 instances.append(state.id)
         return instances
 
-    def update(self):
-        if not self.exists():
-            self.create()
-        group = self.__get_resource()
-        group.launch_config_name = self.configuration["launch_config"]
-        group.update()
-
-    def force_new_launch_configuration(self):
+    def increase_desired_capacity(self):
         """
-        Force new launch configuration by increasing desired capacity and
-        decreasing it afterwards
-        """
+        Increases the autoscale group desired capacity and max_size, this implies launching
+        new EC2 instances
 
+        Current policy: "Las gallinas que entran por las que salen"
+        """
         balloon = Balloon("Increasing desired capacity to provision new machines")
-        old_instances = self.instances()
-        instances = old_instances
-        group = self.__get_resource()
-        group.desired_capacity = len(instances) * 2
-        group.max_size = group.max_size * 2
-        group.update()
+
+        current_instances = self.get_instances_with_status('running')
+        self.old_instances = current_instances
+        self.group.desired_capacity = len(current_instances) * 2
+        self.group.max_size = self.group.max_size * 2
+        self.group.update()
+
         for i in range(1, 15):
             balloon.update(i)
             time.sleep(1)
+
         balloon.finish()
 
+    def wait_for_new_instances_ready(self):
+        """
+        Wait for instances launched by autoscale group to be up, running and in the balancer
+        """
         balloon = Balloon("Waiting for new instances until they're up and running")
         i = 0
-        while len(instances) != group.desired_capacity:
+        while len(self.get_instances_with_status('running')) != self.group.desired_capacity:
             balloon.update(i)
             i += 1
             time.sleep(1)
-            group = self.__get_resource()
-            instances = self.instances()
 
-        new_instances = set(instances) - set(old_instances)
-        instances = self.instances('pending')
-        while len(instances) != 0:
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-            instances = self.instances('pending')
         balloon.finish()
 
-        balloon = Balloon("Waiting for new instances until they're added to the balancer %s" % (group.load_balancers[0]))
-        balanced_instances = self.load_balancer().instance_health(new_instances)
-        i = 0
-        while len(balanced_instances) != len(new_instances):
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-            balanced_instances = self.load_balancer().instance_health(new_instances)
-        balloon.finish()
+        # TODO: Query AWS for instances
+        instances = self.get_instances_with_status('running')
+        new_instances = set(instances) - set(self.old_instances)
 
+        # Ask the balancer to wait
+        self.load_balancer().wait_for_instances_with_health(self, new_instances)
+
+    def terminate_older_instances(self):
+        """
+        Terminate instances that we no longer want in the autoscale group, the old ones
+        """
         balloon = Balloon("Changing termination policy to terminate older instances")
-        group.termination_policies = ["OldestLaunchConfiguration"]
-        group.desired_capacity = self.configuration['desired_capacity']
-        group.update()
+        self.group.termination_policies = ["OldestLaunchConfiguration"]
+        self.group.desired_capacity = self.configuration['desired_capacity']
+        self.group.update()
+
         i = 0
-        while len(balanced_instances) != len(new_instances):
+        while len(self.get_instances_with_status('running')) != self.group.desired_capacity:
             balloon.update(i)
             i += 1
             time.sleep(1)
         balloon.finish()
 
-        group.termination_policies = self.configuration['termination_policies']
-        group.max_size = self.configuration['max_size']
-        group.update()
+        self.group.termination_policies = self.configuration['termination_policies']
+        self.group.max_size = self.configuration['max_size']
+        self.group.update()
+
+    def apply_launch_configuration_for_deployment(self):
+        """
+        Applies changes to current autoscale group launch configuration for creating new instances:
+
+        * First, increases desired capacity, therefore autoscale group grows with the new launch
+        configuration
+        * Then, we wait for the new instances being booted to be ready and in the balancer
+        * Finally, we terminate older instances by restoring initial capacity in autoscale group
+        """
+        self.increase_desired_capacity()
+        self.wait_for_new_instances_ready()
+        self.terminate_older_instances()
 
     def create(self):
-        group = AutoScalingGroup(group_name=self.name, **self.configuration)
-        self.resource = self.autoscale.create_auto_scaling_group(group)
-        tags = Tag(key='Name', value=self.application, propagate_at_launch=True, resource_id=self.name)
-        self.autoscale.create_or_update_tags([tags])
+        """
+        Creates autoscaling group and sets a `propagate_at_launch` tag for future instances
+        the autoscale group boots
+        """
+        autoscaling_group = AutoScalingGroup(group_name=self.name, **self.configuration)
+        self.resource = self.autoscale.create_auto_scaling_group(autoscaling_group)
+        self.group = self._get_autoscaling_group()
+        tag = Tag(
+            key='Name',
+            value=self.application,
+            propagate_at_launch=True,
+            resource_id=self.name
+        )
+        self.autoscale.create_or_update_tags([tag])
 
 
-class EC2AutoscalePolicy(EC2Autoscale):
+class EC2AutoScalePolicy(EC2AutoScale):
     """
     EC2 autoscale policy
     """
 
     def __init__(self, name, configuration, application, group):
-        super(EC2AutoscalePolicy, self).__init__(name, configuration, application)
+        """
+        :param name: Autoscale policy name
+        :param configuration: Dictionary containing configuration
+        :param application: Application name
+        :param group: `EC2AutoScaleGroup` instance to which the policy will be applied
+        """
+        super(EC2AutoScalePolicy, self).__init__(name, configuration, application)
         self.group = group
         self.name = name
         self.configuration["as_name"] = group.name
 
-    def __get_resource(self):
-        return self.autoscale.get_all_policies(as_group=self.group.name, policy_names=[self.name])[0]
-
-    def exists(self):
-        try:
-            self.__get_resource()
-        except IndexError:
-            return False
-        return True
-
-    def update(self):
-        self.create()
-
-    def create(self):
+    def update_or_create(self):
+        """
+        Creates the scalinig policy in AWS and stores in `self.reource` a `boto.ec2.autoscale.policy.ScalingPolicy`
+        """
         policy = ScalingPolicy(name=self.name, **self.configuration)
         self.autoscale.create_scaling_policy(policy)
         # Refresh policy from EC2 to get ARN
-        self.resource = self.__get_resource()
+        self.resource = self.autoscale.get_all_policies(as_group=self.group.name, policy_names=[self.name])[0]
+
+    def get_policy_arn(self):
+        return self.resource.policy_arn
+
+    def get_group_name(self):
+        return self.group.name
 
 
 class CloudWatchMetricAlarm(CloudWatch):
@@ -375,23 +362,10 @@ class CloudWatchMetricAlarm(CloudWatch):
         super(CloudWatchMetricAlarm, self).__init__(configuration, application)
         self.name = name
         self.policy = policy
-        self.configuration["alarm_actions"] = [policy.resource.policy_arn]
-        self.configuration["dimensions"] = {"AutoScalingGroupName": policy.group.name}
+        self.configuration["alarm_actions"] = [policy.get_policy_arn()]
+        self.configuration["dimensions"] = {"AutoScalingGroupName": policy.get_group_name()}
 
-    def __get_resource(self):
-        return self.cloudwatch.describe_alarms(alarm_names=[self.name])[0]
-
-    def exists(self):
-        try:
-            self.__get_resource()
-        except IndexError:
-            return False
-        return True
-
-    def update(self):
-        self.create()
-
-    def create(self):
+    def update_or_create(self):
         alarm = MetricAlarm(name=self.name, **self.configuration)
         self.resource = self.cloudwatch.create_alarm(alarm)
 
@@ -401,16 +375,15 @@ class ELBBalancer(ELB):
     ELB balancer
     """
 
-    def __init__(self, name, configuration, application):
-        super(ELBBalancer, self).__init__(name, configuration, application)
+    def __init__(self, name, application, configuration=None):
+        super(ELBBalancer, self).__init__(name, configuration or {}, application)
         self.balancer = self.elb.get_all_load_balancers(load_balancer_names=[self.name])[0]
 
-    def instance_health(self, instance_ids=[], health='InService'):
+    def filter_instances_with_health(self, instance_ids, health='InService'):
         """
         Get number of instances running
         """
         instances = []
-        # import ipdb; ipdb.set_trace()
         for instance in instance_ids:
             try:
                 instance_health = self.balancer.get_instance_health([instance])[0]
@@ -419,3 +392,17 @@ class ELBBalancer(ELB):
             if instance_health.state == health:
                 instances.append(instance)
         return instances
+
+    def wait_for_instances_with_health(self, instances_ids, health='InService'):
+        balloon = Balloon("Waiting for instances until they're in the balancer %s with status %s" % (
+            self.balancer.name,
+            health
+        ))
+
+        i = 0
+        while len(self.filter_instances_with_health(instances_ids, health=health)) != len(instances_ids):
+            balloon.update(i)
+            i += 1
+            time.sleep(1)
+
+        balloon.finish()

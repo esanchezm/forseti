@@ -17,11 +17,11 @@ from docopt import docopt
 from forseti.forseti import Forseti
 import os.path
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     arguments = docopt(__doc__)
 
-    filepath = os.path.dirname(os.path.abspath(__file__))+"/forseti.json"
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'forseti.json')
     try:
         configuration = json.load(open(filepath))
     except ValueError as exception:
