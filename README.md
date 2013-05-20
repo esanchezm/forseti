@@ -39,7 +39,7 @@ cloudwatch_region_endpoint = monitoring.eu-west-1.amazonaws.com
 
 ### Forseti's configuration for deployment
 
-In order to use the default deployer with the CLI you will need to create a `.forseti/config.json` file, you can use <a href="https://github.com/ticketea/forseti/blob/master/forseti/deployers/config-example.json">config-example.json</a> file as a base.
+In order to use the default deployer with the CLI you will need to create a `.forseti/config.json` file, you can use <a href="https://github.com/ticketea/forseti/blob/master/forseti/deployers/default-example.json">default-example.json</a> file as a base.
 
 ## Default deployer
 
