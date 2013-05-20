@@ -208,14 +208,14 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         if self.elb is not None:
             return self.elb
-        self.elb = ELBBalancer(self.__get_resource().load_balancers[0], self.application)
+        self.elb = ELBBalancer(self.group.load_balancers[0], self.application)
         return self.elb
 
     def get_instances_with_status(self, status):
         """
         Get a list of instances in this autoscale group whose status matches `status`
         """
-        instances_ids = [instance.instance_id for instance in self._get_autoscaling_group()]
+        instances_ids = [instance.instance_id for instance in self._get_autoscaling_group().instances]
 
         if not instances_ids:
             return []
@@ -266,14 +266,14 @@ class EC2AutoScaleGroup(EC2AutoScale):
         new_instances = set(instances) - set(self.old_instances)
 
         # Ask the balancer to wait
-        self.load_balancer().wait_for_instances_with_health(self, new_instances)
+        self.load_balancer().wait_for_instances_with_health(new_instances)
 
     def terminate_older_instances(self):
         """
         Terminate instances that we no longer want in the autoscale group, the old ones
         """
         balloon = Balloon("Changing termination policy to terminate older instances")
-        self.group.termination_policies = ["OldestLaunchConfiguration"]
+        self.group.termination_policies = ["OldestLaunchConfiguration", "OldestInstance"]
         self.group.desired_capacity = self.configuration['desired_capacity']
         self.group.update()
 
@@ -301,21 +301,23 @@ class EC2AutoScaleGroup(EC2AutoScale):
         self.wait_for_new_instances_ready()
         self.terminate_older_instances()
 
-    def create(self):
+    def update_or_create(self):
         """
         Creates autoscaling group and sets a `propagate_at_launch` tag for future instances
         the autoscale group boots
         """
-        autoscaling_group = AutoScalingGroup(group_name=self.name, **self.configuration)
-        self.resource = self.autoscale.create_auto_scaling_group(autoscaling_group)
         self.group = self._get_autoscaling_group()
-        tag = Tag(
-            key='Name',
-            value=self.application,
-            propagate_at_launch=True,
-            resource_id=self.name
-        )
-        self.autoscale.create_or_update_tags([tag])
+        if self.group is None:
+            autoscaling_group = AutoScalingGroup(group_name=self.name, **self.configuration)
+            self.resource = self.autoscale.create_auto_scaling_group(autoscaling_group)
+            self.group = self._get_autoscaling_group()
+            tag = Tag(
+                key='Name',
+                value=self.application,
+                propagate_at_launch=True,
+                resource_id=self.name
+            )
+            self.autoscale.create_or_update_tags([tag])
 
 
 class EC2AutoScalePolicy(EC2AutoScale):

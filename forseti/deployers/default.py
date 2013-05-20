@@ -56,7 +56,7 @@ class TicketeaDeployer(object):
         group_properties = self.group_properties[self.autoscale_group_name]
         group = EC2AutoScaleGroup(self.autoscale_group_name, group_properties, application)
         group.set_launch_configuration(autoscale_config)
-        group.create()
+        group.update_or_create()
 
         return group
 
