@@ -17,6 +17,7 @@ from boto.ec2.autoscale import (
     ScalingPolicy,
     Tag,
 )
+from boto.exception import BotoServerError
 from boto.ec2.cloudwatch import MetricAlarm
 import paramiko
 
@@ -268,23 +269,20 @@ class EC2AutoScaleGroup(EC2AutoScale):
         # Ask the balancer to wait
         self.load_balancer().wait_for_instances_with_health(new_instances)
 
-    def terminate_older_instances(self):
+    def terminate_instances(self, instances_ids):
         """
         Terminate instances that we no longer want in the autoscale group, the old ones
         """
-        balloon = Balloon("Changing termination policy to terminate older instances")
-        self.group.termination_policies = ["OldestInstance", "OldestLaunchConfiguration"]
-        self.group.desired_capacity = self.configuration['desired_capacity']
-        self.group.update()
-
-        i = 0
-        while len(self.get_instances_with_status('running')) != self.group.desired_capacity:
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
+        balloon = Balloon("Terminating old instances")
+        for instance_id in instances_ids:
+            try:
+                self.autoscale.terminate_instance(instance_id, decrement_capacity=True)
+            except BotoServerError:
+                pass
         balloon.finish()
 
-        self.group.termination_policies = self.configuration['termination_policies']
+        # Force an updated group instance to be sure the update is done correctly
+        self.group = self._get_autoscaling_group()
         self.group.max_size = self.configuration['max_size']
         self.group.update()
 
@@ -297,9 +295,10 @@ class EC2AutoScaleGroup(EC2AutoScale):
         * Then, we wait for the new instances being booted to be ready and in the balancer
         * Finally, we terminate older instances by restoring initial capacity in autoscale group
         """
+        instances_ids = self.get_instances_with_status('running')
         self.increase_desired_capacity()
         self.wait_for_new_instances_ready()
-        self.terminate_older_instances()
+        self.terminate_instances(instances_ids)
 
     def update_or_create(self):
         """
