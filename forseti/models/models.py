@@ -417,3 +417,6 @@ class ELBBalancer(ELB):
             time.sleep(1)
 
         balloon.finish()
+
+    def get_health_check_interval(self):
+        return self.balancer.health_check.interval
