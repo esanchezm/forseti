@@ -1,10 +1,8 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import os
 import time
 
-from forseti.base import (
+from forseti.models.base import (
     CloudWatch,
     EC2,
     EC2AutoScale,
@@ -12,6 +10,7 @@ from forseti.base import (
 )
 from forseti.utils import Balloon
 from forseti.exceptions import EC2InstanceException
+
 from boto.ec2.autoscale import (
     AutoScalingGroup,
     LaunchConfiguration,
@@ -19,7 +18,6 @@ from boto.ec2.autoscale import (
     Tag,
 )
 from boto.ec2.cloudwatch import MetricAlarm
-
 import paramiko
 
 

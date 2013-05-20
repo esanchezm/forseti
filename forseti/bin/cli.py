@@ -14,11 +14,11 @@ Options:
 import json
 import sys
 from docopt import docopt
-from forseti.forseti import Forseti
+from forseti.deployers import TicketeaDeployer
 import os.path
 
 
-if __name__ == '__main__':
+def main():
     arguments = docopt(__doc__)
 
     filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'forseti.json')
@@ -29,7 +29,11 @@ if __name__ == '__main__':
         print exception
         sys.exit()
 
-    forseti = Forseti(configuration)
+    deployer = TicketeaDeployer(configuration)
 
     if arguments['deploy']:
-        forseti.deploy(arguments['<app>'])
+        deployer.deploy(arguments['<app>'])
+
+
+if __name__ == '__main__':
+    main()

@@ -1,17 +1,15 @@
-from models import (
+from forseti.models import (
     GoldenEC2Instance,
     EC2AutoScaleGroup,
-)
-from models import (
     EC2AutoScaleConfig,
     EC2AutoScalePolicy,
     CloudWatchMetricAlarm
 )
-from models import Balloon
+from forseti.utils import Balloon
 
 
-class Forseti(object):
-    """Forseti main class"""
+class TicketeaDeployer(object):
+    """Deployer for ticketea's infrastructure"""
 
     def __init__(self, aws_properties):
         self.aws_properties = aws_properties
