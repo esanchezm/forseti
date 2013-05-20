@@ -24,7 +24,7 @@ class TicketeaDeployer(object):
 
     def create_ami_from_golden_instance(self, application):
         """
-        Create
+        Create an AMI from a golden EC2 instance
         """
         self.gold_instance = GoldenEC2Instance(self.gold_properties, application)
 
@@ -88,6 +88,9 @@ class TicketeaDeployer(object):
 
     def setup_autoscale(self, application, ami_id):
         """
+        Creates or updates the autoscale group, launch configuration, autoscaling
+        policies and CloudWatch alarms.
+
         :param application: Application name
         :param ami_id: AMI id used for the new autoscale system
         """
@@ -117,6 +120,8 @@ class TicketeaDeployer(object):
 
     def deploy(self, application):
         """
+        Do the code deployment in a golden instance and setup an autoscale group
+        with an AMI created from it.
         """
         balloon = Balloon("")
 
