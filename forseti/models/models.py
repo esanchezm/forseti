@@ -273,7 +273,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
         Terminate instances that we no longer want in the autoscale group, the old ones
         """
         balloon = Balloon("Changing termination policy to terminate older instances")
-        self.group.termination_policies = ["OldestLaunchConfiguration", "OldestInstance"]
+        self.group.termination_policies = ["OldestInstance", "OldestLaunchConfiguration"]
         self.group.desired_capacity = self.configuration['desired_capacity']
         self.group.update()
 
