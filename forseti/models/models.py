@@ -189,10 +189,10 @@ class EC2AutoScaleGroup(EC2AutoScale):
         Sets launch configuration for autoscale group, if group is attached
         to an existing AWS autoscale group, update its configuration
         """
-        self.configuration["launch_config"] = launch_configuration.name
+        self.configuration['launch_config'] = launch_configuration.name
 
         if self.group:
-            self.group.launch_config_name = self.configuration["launch_config"]
+            self.group.launch_config_name = self.configuration['launch_config']
             self.group.update()
 
     def _get_autoscaling_group(self):
@@ -318,6 +318,17 @@ class EC2AutoScaleGroup(EC2AutoScale):
                 resource_id=self.name
             )
             self.autoscale.create_or_update_tags([tag])
+        else:
+            self.group.launch_config_name = self.configuration['launch_config']
+            self.group.availability_zones = self.configuration['availability_zones']
+            self.group.desired_capacity = self.configuration['desired_capacity']
+            self.group.max_size = self.configuration['max_size']
+            self.group.min_size = self.configuration['min_size']
+            self.group.load_balancers = self.configuration['load_balancers']
+            self.group.default_cooldown = self.configuration['default_cooldown']
+            self.group.termination_policies = self.configuration['termination_policies']
+            self.group.update()
+            self.group = self._get_autoscaling_group()
 
 
 class EC2AutoScalePolicy(EC2AutoScale):
