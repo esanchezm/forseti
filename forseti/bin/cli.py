@@ -2,13 +2,14 @@
 """Forseti is a tool to manage AWS autoscaling groups by using golden AMIs.
 
 Usage:
-    forseti.py deploy <app>
+    forseti.py deploy <app> [--ami=<ami-id>]
     forseti.py (-h | --help)
     forseti.py --version
 
 Options:
-    -h --help     Show this screen.
-    --version     Show version.
+    --ami=<ami-id> AMI id to be used instead of creating a golden one.
+    -h --help      Show this screen.
+    --version      Show version.
 """
 
 import json
@@ -33,7 +34,7 @@ def main():
 
     deployer = TicketeaDeployer(configuration)
     if arguments['deploy']:
-        deployer.deploy(arguments['<app>'])
+        deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
 
 
 if __name__ == '__main__':

@@ -118,7 +118,7 @@ class TicketeaDeployer(object):
         group.apply_launch_configuration_for_deployment()
         print "All instances are running"
 
-    def deploy(self, application):
+    def deploy(self, application, ami_id=None):
         """
         Do the code deployment in a golden instance and setup an autoscale group
         with an AMI created from it.
@@ -127,9 +127,10 @@ class TicketeaDeployer(object):
 
         self.app_properties = self.aws_properties['applications'][application]
         self.gold_properties = self.app_properties['gold']
-        new_ami_id = self.create_ami_from_golden_instance(application)
-        print "New AMI from golden image %s" % (new_ami_id)
-        self.setup_autoscale(application, new_ami_id)
+        if not ami_id:
+            ami_id = self.create_ami_from_golden_instance(application)
+            print "New AMI from golden image %s" % (ami_id)
+        self.setup_autoscale(application, ami_id)
 
         balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
