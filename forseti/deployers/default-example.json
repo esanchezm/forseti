@@ -58,6 +58,7 @@
         "api": {
             "autoscale_group": "frontend",
             "elb": "frontend-balancer",
+            "scale_policies": ["scale_up_policy", "scale_down_policy"],
             "gold": {
                 "image_id": "ami-00000000",
                 "key_name": "private-keys",

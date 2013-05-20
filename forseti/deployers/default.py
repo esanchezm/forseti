@@ -65,11 +65,12 @@ class TicketeaDeployer(object):
         Creates or updates autoscale policies `EC2AutoScalePolicy`
         """
         self.autoscale_properties = self.aws_properties['autoscale']
-        policies = self.autoscale_properties['policies']
-        for name, policy_properties in policies.items():
-            policy = EC2AutoScalePolicy(name, policy_properties, application, group)
+        policies = self.app_properties['scaling_policies']
+        for policy_name in policies:
+            policy_properties = self.autoscale_properties['policies'][policy_name]
+            policy = EC2AutoScalePolicy(policy_name, policy_properties, application, group)
             policy.update_or_create()
-            self.policies[name] = policy
+            self.policies[policy_name] = policy
 
     def update_or_create_metric_alarms(self, application, group):
         """
@@ -77,11 +78,13 @@ class TicketeaDeployer(object):
         """
         self.autoscale_properties = self.aws_properties['autoscale']
         alarms = self.autoscale_properties['alarms']
-        for name, alarm_properties in alarms.items():
-            policy = self.policies[alarm_properties['alarm_actions']]
-            alarm = CloudWatchMetricAlarm(name, alarm_properties, application, policy)
-            alarm.update_or_create()
-            self.alarms[name] = alarm
+        for alarm_name, alarm_properties in alarms.items():
+            alarm_actions = alarm_properties['alarm_actions']
+            if alarm_actions in self.policies:
+                policy = self.policies[alarm_actions]
+                alarm = CloudWatchMetricAlarm(alarm_name, alarm_properties, application, policy)
+                alarm.update_or_create()
+                self.alarms[alarm_name] = alarm
 
     def setup_autoscale(self, application, ami_id):
         """
