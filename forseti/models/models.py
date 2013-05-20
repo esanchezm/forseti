@@ -269,6 +269,15 @@ class EC2AutoScaleGroup(EC2AutoScale):
         # Ask the balancer to wait
         self.load_balancer().wait_for_instances_with_health(new_instances)
 
+        # We do it twice, because sometimes the balancer health check is a bit tricky.
+        balloon = Balloon("Waiting for another balancer health check pass")
+        for i in range(1, self.load_balancer().get_health_check_interval()):
+            balloon.update(i)
+            time.sleep(1)
+        balloon.finish()
+
+        self.load_balancer().wait_for_instances_with_health(new_instances)
+
     def terminate_instances(self, instances_ids):
         """
         Terminate instances that we no longer want in the autoscale group, the old ones
