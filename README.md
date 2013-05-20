@@ -1,27 +1,25 @@
-### Preface
-
 From Wikipedia: `Forseti` (old norse "the presiding one") is an Æsir god of justice and reconciliation in Norse mythology. He is generally identified with Fosite, a god of the Frisians.
 
-### What is it?
+## What is it?
 
-`Forseti` is a utility to manage your AWS autoscaling groups and policies and allows you to create a AMI to be used for autoscaling purposes.
+`Forseti` is a two-in-one utility:
 
-### Requirements
+* A set of classes wrapping boto, provinding friendly high level operations that allow you to easily do common administration operations.
+* A CLI tool to manage your AWS autoscaling groups, policies, etc. It allows you to easily deploy your code in AWS using your preferred strategy defined as a _deployer_. A _deployer_ is a class that using previous models, defines a deployment strategy, a default one explained later on is provided.
 
-* docopt
-* boto
-* paramiko
-* progressbar
+## Installation
 
-Install all of them, it's as easy as run:
+To install forseti simply do:
 
-```
-pip install docopt boto paramiko progressbar
-```
+``python setup.py install``
 
-### Configuration
+After this you will have forseti's CLI available in your path, but before using it, you need to set it up.
 
-Create a `~/.boto` or `/etc/boto.cfg` file with the following
+## Configuration
+
+### Boto's configuration
+
+As forseti depends on boto, you will have to configure it. Create a `~/.boto` or `/etc/boto.cfg` file with the following
 
 ```
 [Credentials]
@@ -39,25 +37,13 @@ cloudwatch_region_name = eu-west-1
 cloudwatch_region_endpoint = monitoring.eu-west-1.amazonaws.com
 ```
 
-Create a `forseti.json` file, you can use `forseti.example.json` file as a base.
+### Forseti's configuration for deployment
 
-### Before using
+In order to use the default deployer with the CLI you will need to create a `.forseti/config.json` file, you can use <a href="https://github.com/ticketea/forseti/blob/master/forseti/deployers/config-example.json">config-example.json</a> file as a base.
 
-`Forseti` uses a _gold AMI_, which is an AMI with all the software you need, except you application specific code. Unfortunately, `forseti` is not able to generate a gold AMI for you, so you'll need to create one.
+## Default deployer
 
-This is actually a very easy operation. All you need to do is create a new EC2 Instance from an AMI with EBS root and provision it with all the software you need (apache, nginx, nodejs...) and its configurations (virtualhosts or similars). Once you've installed everything, create an AMI from the instance by right clicking on it on the AWS Console and select "Create Image (EBS AMI)". There you go, you have a gold AMI!
-
-### Running
-
-Once your file is configured, you can do deploy your new application code with:
-
-```
-python forsety.py deploy application
-```
-
-### How does it works?
-
-The deployment process is similar to:
+The default deployer (located at `deployers/default.py`) process is similar to:
 
 - Create an instance with the gold AMI. This is called _golden instance_.
 - Deploy the application code on the new instance.
@@ -68,3 +54,17 @@ The deployment process is similar to:
 - Create or update the CloudWatch alarms which will trigger the autoscaling policies.
 - Wait until the autoscaling group has the new instances with the golden AMI.
 - Deregister the old instances.
+
+### Before using
+
+Forseti's default deployer uses a _gold AMI_, which is an AMI with all the software you need, except your application specific code. Unfortunately, forseti currently is not able to generate a gold AMI for you, so you'll need to create one manually.
+
+This is actually a very easy operation. All you need to do is create a new EC2 Instance from an AMI with EBS root and provision it with all the software you need (apache, nginx, nodejs...) and its configurations (virtualhosts or similars). Once you've installed everything, create an AMI from the instance by right clicking on it on the AWS Console and select _"Create Image (EBS AMI)"_. There you go, you now have a gold AMI!
+
+### Deploying
+
+Once your file is configured, you can deploy your new application code with the CLI doing:
+
+```
+forsety deploy application_name
+```
