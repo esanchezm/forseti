@@ -21,16 +21,17 @@ import os.path
 def main():
     arguments = docopt(__doc__)
 
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'forseti.json')
+    config_path = os.path.abspath(os.path.expanduser('~/.forseti/config.json'))
+    if not os.path.exists(config_path):
+        raise ValueError("Configuration file does not exist at %r" % config_path)
+
     try:
-        configuration = json.load(open(filepath))
+        configuration = json.load(open(config_path))
     except ValueError as exception:
-        print "Invalid configuration file %s\n" % filepath
-        print exception
-        sys.exit()
+        print "Invalid JSON configuration file %s\n" % config_path
+        raise exception
 
     deployer = TicketeaDeployer(configuration)
-
     if arguments['deploy']:
         deployer.deploy(arguments['<app>'])
 
