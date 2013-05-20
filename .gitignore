@@ -1,1 +1,24 @@
+eggs/*
+bin/*
+build/*
+dist/*
+develop-eggs/*
+parts/*
+downloads/*
+media/*
+
+#egg's specific
+*.egg-info
+
+#defaults
 *.pyc
+*.pyo
+
+#temp file
+tempfile
+*.swp
+
+# coverage
+.coverage
+_build
+htmlcov/*
