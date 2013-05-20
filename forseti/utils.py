@@ -13,5 +13,5 @@ class Balloon(progressbar.ProgressBar):
             progressbar.AnimatedMarker(markers='.oO@* '),
             progressbar.Timer(format=" %s")
         ]
-        super(Balloon, self).__init__(widgets=widgets, **kwargs)
+        super(Balloon, self).__init__(widgets=widgets, maxval=300, **kwargs)
         self.start()
