@@ -27,8 +27,8 @@ class EC2Instance(EC2):
     EC2 Instance
     """
 
-    def __init__(self, configuration, application):
-        super(EC2Instance, self).__init__(configuration, application)
+    def __init__(self, application, configuration=None):
+        super(EC2Instance, self).__init__(application, configuration)
         self.instance = None
 
     def launch(self):
@@ -54,7 +54,7 @@ class GoldenEC2Instance(EC2Instance):
     """
     TIMEOUT = 2
 
-    def __init__(self, configuration, application):
+    def __init__(self, application, configuration=None):
         """
         :param configuration: Parameters to ``boto.ec2.connection.run_instances``.
         :param application: Application name.
@@ -69,7 +69,7 @@ class GoldenEC2Instance(EC2Instance):
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        super(GoldenEC2Instance, self).__init__(configuration, application)
+        super(GoldenEC2Instance, self).__init__(application, configuration)
         # No need to monitor an instance that will be terminated soon
         self.configuration["monitoring_enabled"] = False
 
@@ -140,12 +140,15 @@ class GoldenEC2Instance(EC2Instance):
         Create an AMI from the golden instance started
         """
         balloon = Balloon("Golden instance %s creating image" % self.instance.id)
+        i = 0
 
         ami_name = "golden-%s-ami-%s" % (self.application, self.version)
         ami_id = self.instance.create_image(ami_name, description=ami_name)
+        balloon.update(i)
+        i += 1
+        time.sleep(1)
         ami = self.ec2.get_all_images(image_ids=(ami_id,))[0]
 
-        i = 0
         while ami.update() == "pending":
             balloon.update(i)
             i += 1
@@ -179,8 +182,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
     EC2 autoscale group
     """
 
-    def __init__(self, name, configuration, application):
-        super(EC2AutoScaleGroup, self).__init__(name, configuration, application)
+    def __init__(self, name, application, configuration=None):
+        super(EC2AutoScaleGroup, self).__init__(name, application, configuration)
         self.group = None
         self.elb = None
         self.name = name  # Do not add version to the name
@@ -344,14 +347,14 @@ class EC2AutoScalePolicy(EC2AutoScale):
     EC2 autoscale policy
     """
 
-    def __init__(self, name, configuration, application, group):
+    def __init__(self, name, group, application, configuration=None):
         """
         :param name: Autoscale policy name
         :param configuration: Dictionary containing configuration
         :param application: Application name
         :param group: `EC2AutoScaleGroup` instance to which the policy will be applied
         """
-        super(EC2AutoScalePolicy, self).__init__(name, configuration, application)
+        super(EC2AutoScalePolicy, self).__init__(name, application, configuration)
         self.group = group
         self.name = name
         self.configuration["as_name"] = group.name
@@ -377,8 +380,8 @@ class CloudWatchMetricAlarm(CloudWatch):
     Cloudwatch metric alarm
     """
 
-    def __init__(self, name, configuration, application, policy):
-        super(CloudWatchMetricAlarm, self).__init__(configuration, application)
+    def __init__(self, name, policy, application, configuration=None):
+        super(CloudWatchMetricAlarm, self).__init__(application, configuration)
         self.name = name
         self.policy = policy
         self.configuration["alarm_actions"] = [policy.get_policy_arn()]
@@ -395,7 +398,7 @@ class ELBBalancer(ELB):
     """
 
     def __init__(self, name, application, configuration=None):
-        super(ELBBalancer, self).__init__(name, configuration or {}, application)
+        super(ELBBalancer, self).__init__(name, application, configuration)
         self.balancer = self.elb.get_all_load_balancers(load_balancer_names=[self.name])[0]
 
     def filter_instances_with_health(self, instance_ids, health='InService'):

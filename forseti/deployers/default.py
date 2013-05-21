@@ -26,10 +26,11 @@ class TicketeaDeployer(object):
         """
         Create an AMI from a golden EC2 instance
         """
-        self.gold_instance = GoldenEC2Instance(self.gold_properties, application)
+        self.gold_instance = GoldenEC2Instance(application, self.gold_properties)
 
         self.gold_instance.launch_and_wait()
         self.gold_instance.provision()
+        import sys;sys.exit()
         ami_id = self.gold_instance.create_image()
         self.gold_instance.terminate()
         self.gold_instance = None
@@ -43,7 +44,7 @@ class TicketeaDeployer(object):
         configs_properties = self.autoscale_properties['configs']
         config_properties = configs_properties[self.autoscale_group_name]
         config_properties['image_id'] = ami_id
-        config = EC2AutoScaleConfig(self.autoscale_group_name, config_properties, application)
+        config = EC2AutoScaleConfig(self.autoscale_group_name, application, config_properties)
         config.create()
 
         return config
@@ -54,7 +55,7 @@ class TicketeaDeployer(object):
         """
         self.group_properties = self.autoscale_properties['groups']
         group_properties = self.group_properties[self.autoscale_group_name]
-        group = EC2AutoScaleGroup(self.autoscale_group_name, group_properties, application)
+        group = EC2AutoScaleGroup(self.autoscale_group_name, application, group_properties)
         group.set_launch_configuration(autoscale_config)
         group.update_or_create()
 
@@ -68,7 +69,7 @@ class TicketeaDeployer(object):
         policies = self.app_properties['scaling_policies']
         for policy_name in policies:
             policy_properties = self.autoscale_properties['policies'][policy_name]
-            policy = EC2AutoScalePolicy(policy_name, policy_properties, application, group)
+            policy = EC2AutoScalePolicy(policy_name, group, application, policy_properties)
             policy.update_or_create()
             self.policies[policy_name] = policy
 
@@ -82,7 +83,7 @@ class TicketeaDeployer(object):
             alarm_actions = alarm_properties['alarm_actions']
             if alarm_actions in self.policies:
                 policy = self.policies[alarm_actions]
-                alarm = CloudWatchMetricAlarm(alarm_name, alarm_properties, application, policy)
+                alarm = CloudWatchMetricAlarm(alarm_name, policy, application, alarm_properties)
                 alarm.update_or_create()
                 self.alarms[alarm_name] = alarm
 
