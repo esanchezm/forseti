@@ -171,8 +171,21 @@ class EC2AutoScaleConfig(EC2AutoScale):
 
     def create(self):
         """
-        Creates a launch configuration using configuration file
+        Creates a launch configuration using configuration file. It will update
+        the autocale configuration `name` property by appending the current date
+        and a version
         """
+        version = 1
+        found = False
+        while not found:
+            name = "%s-%s-%s" % (self.name, self.today, version)
+            launch_configurations = self.autoscale.get_all_launch_configurations(names=[name])
+            if launch_configurations:
+                version += 1
+            else:
+                found = True
+
+        self.name = name
         launch_configuration = LaunchConfiguration(name=self.name, **self.configuration)
         self.resource = self.autoscale.create_launch_configuration(launch_configuration)
 
