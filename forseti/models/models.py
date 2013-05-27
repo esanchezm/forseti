@@ -338,13 +338,25 @@ class EC2AutoScaleGroup(EC2AutoScale):
             autoscaling_group = AutoScalingGroup(group_name=self.name, **self.configuration)
             self.resource = self.autoscale.create_auto_scaling_group(autoscaling_group)
             self.group = self._get_autoscaling_group()
-            tag = Tag(
+            name_tag = Tag(
                 key='Name',
                 value=self.application,
                 propagate_at_launch=True,
                 resource_id=self.name
             )
-            self.autoscale.create_or_update_tags([tag])
+            application_tag = Tag(
+                key='forseti:application',
+                value=self.application,
+                propagate_at_launch=True,
+                resource_id=self.name
+            )
+            date_tag = Tag(
+                key='forseti:date',
+                value=self.today,
+                propagate_at_launch=True,
+                resource_id=self.name
+            )
+            self.autoscale.create_or_update_tags([name_tag, application_tag, date_tag])
         else:
             self.group.launch_config_name = self.configuration['launch_config']
             self.group.availability_zones = self.configuration['availability_zones']
