@@ -204,7 +204,10 @@ class EC2AutoScaleGroup(EC2AutoScale):
         Returns a current `boto.ec2.autoscale.group.AutoScalingGroup` instance associated to
         the instance of this class
         """
-        return self.autoscale.get_all_groups(names=[self.name])[0]
+        groups = self.autoscale.get_all_groups(names=[self.name])
+        if groups:
+            return groups[0]
+        return None
 
     def load_balancer(self):
         """
