@@ -30,7 +30,6 @@ class TicketeaDeployer(object):
 
         self.gold_instance.launch_and_wait()
         self.gold_instance.provision()
-        import sys;sys.exit()
         ami_id = self.gold_instance.create_image()
         self.gold_instance.terminate()
         self.gold_instance = None
