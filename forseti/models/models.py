@@ -90,7 +90,10 @@ class GoldenEC2Instance(EC2Instance):
 
         if self.instance.update() == "running":
             tag_name = "golden-%s-instance-%s" % (self.application, self.today)
-            self.instance.add_tag("Name", tag_name)
+            self.instance.add_tag('Name', tag_name)
+            self.instance.add_tag('forseti:golden-instance', True)
+            self.instance.add_tag('forseti:application', self.application)
+            self.instance.add_tag('forseti:date', self.today)
         else:
             raise EC2InstanceException("Golden instance %s could not be launched" % self.instance.id)
 
@@ -142,7 +145,15 @@ class GoldenEC2Instance(EC2Instance):
         balloon = Balloon("Golden instance %s creating image" % self.instance.id)
         i = 0
 
-        ami_name = "golden-%s-ami-%s" % (self.application, self.today)
+        amis = self.ec2.get_all_images(
+            owners=['self'],
+            filters={
+                'tag:forseti:golden-image': True,
+                'tag:forseti:application': self.application,
+                'tag:forseti:date': self.today,
+            }
+        )
+        ami_name = "golden-%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
         ami_id = self.instance.create_image(ami_name, description=ami_name)
         balloon.update(i)
         i += 1
@@ -158,6 +169,9 @@ class GoldenEC2Instance(EC2Instance):
 
         if ami.update() == "available":
             ami.add_tag("Name", ami_name)
+            ami.add_tag('forseti:golden-image', True)
+            ami.add_tag('forseti:application', self.application)
+            ami.add_tag('forseti:date', self.today)
         else:
             raise EC2InstanceException("Golden image %s could not be created" % self.instance.id)
 
