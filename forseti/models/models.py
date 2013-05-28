@@ -89,7 +89,7 @@ class GoldenEC2Instance(EC2Instance):
         balloon.finish()
 
         if self.instance.update() == "running":
-            tag_name = "golden-%s-instance-%s" % (self.application, self.version)
+            tag_name = "golden-%s-instance-%s" % (self.application, self.today)
             self.instance.add_tag("Name", tag_name)
         else:
             raise EC2InstanceException("Golden instance %s could not be launched" % self.instance.id)
@@ -142,7 +142,7 @@ class GoldenEC2Instance(EC2Instance):
         balloon = Balloon("Golden instance %s creating image" % self.instance.id)
         i = 0
 
-        ami_name = "golden-%s-ami-%s" % (self.application, self.version)
+        ami_name = "golden-%s-ami-%s" % (self.application, self.today)
         ami_id = self.instance.create_image(ami_name, description=ami_name)
         balloon.update(i)
         i += 1

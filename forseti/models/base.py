@@ -15,7 +15,7 @@ class EC2(object):
         self.configuration = configuration or {}
         self.application = application
         self.resource = None
-        self.version = datetime.today().strftime("%Y-%m-%d-%s")
+        self.today = datetime.today().strftime("%Y-%m-%d")
 
 
 class EC2AutoScale(EC2):
@@ -26,7 +26,7 @@ class EC2AutoScale(EC2):
     def __init__(self, name, application, configuration=None):
         super(EC2AutoScale, self).__init__(application, configuration)
         self.autoscale = AutoScaleConnection()
-        self.name = "%s-%s" % (name, self.version)
+        self.name = "%s-%s" % (name, self.today)
 
 
 class ELB(EC2):
