@@ -6,18 +6,15 @@ from forseti.models import (
     CloudWatchMetricAlarm
 )
 from forseti.utils import Balloon
+from forseti.config import ForsetiConfiguration
 
 
 class TicketeaDeployer(object):
     """Deployer for ticketea's infrastructure"""
 
     def __init__(self, aws_properties):
-        self.aws_properties = aws_properties
-        self.app_properties = {}
-        self.gold_properties = {}
+        self.configuration = ForsetiConfiguration(aws_properties)
         self.gold_instance = None
-        self.group_properties = {}
-        self.autoscale_properties = {}
         self.policies = {}
         self.alarms = {}
         self.autoscale_group_name = None
@@ -26,7 +23,10 @@ class TicketeaDeployer(object):
         """
         Create an AMI from a golden EC2 instance
         """
-        self.gold_instance = GoldenEC2Instance(application, self.gold_properties)
+        self.gold_instance = GoldenEC2Instance(
+            application,
+            self.configuration.get_gold_instance_configuration(application)
+        )
 
         self.gold_instance.launch_and_wait()
         self.gold_instance.provision()
@@ -40,8 +40,7 @@ class TicketeaDeployer(object):
         """
         Creates an autoscale launch configuration `EC2AutoScaleConfig`
         """
-        configs_properties = self.autoscale_properties['configs']
-        config_properties = configs_properties[self.autoscale_group_name]
+        config_properties = self.configuration.get_launch_configuration_configuration(application)
         config_properties['image_id'] = ami_id
         config = EC2AutoScaleConfig(
             self.configuration.get_application_configuration(application)['autoscale_group'],
@@ -56,9 +55,11 @@ class TicketeaDeployer(object):
         """
         Creates or updates an autoscale group `EC2AutoScaleGroup`
         """
-        self.group_properties = self.autoscale_properties['groups']
-        group_properties = self.group_properties[self.autoscale_group_name]
-        group = EC2AutoScaleGroup(self.autoscale_group_name, application, group_properties)
+        group = EC2AutoScaleGroup(
+            self.autoscale_group_name,
+            application,
+            self.configuration.get_autoscale_group_configuration(application)
+        )
         group.set_launch_configuration(autoscale_config)
         group.update_or_create()
 
@@ -68,11 +69,14 @@ class TicketeaDeployer(object):
         """
         Creates or updates autoscale policies `EC2AutoScalePolicy`
         """
-        self.autoscale_properties = self.aws_properties['autoscale']
-        policies = self.app_properties['scaling_policies']
+        policies = self.configuration.get_scaling_policies(application)
         for policy_name in policies:
-            policy_properties = self.autoscale_properties['policies'][policy_name]
-            policy = EC2AutoScalePolicy(policy_name, group, application, policy_properties)
+            policy = EC2AutoScalePolicy(
+                policy_name,
+                group,
+                application,
+                self.configuration.get_policy_configuration(policy_name)
+            )
             policy.update_or_create()
             self.policies[policy_name] = policy
 
@@ -80,8 +84,7 @@ class TicketeaDeployer(object):
         """
         Creates or updates CloudWatch alarms `CloudWatchMetricAlarm`
         """
-        self.autoscale_properties = self.aws_properties['autoscale']
-        alarms = self.autoscale_properties['alarms']
+        alarms = self.configuration.alarms
         for alarm_name, alarm_properties in alarms.items():
             alarm_actions = alarm_properties['alarm_actions']
             if alarm_actions in self.policies:
@@ -98,9 +101,7 @@ class TicketeaDeployer(object):
         :param application: Application name
         :param ami_id: AMI id used for the new autoscale system
         """
-        self.autoscale_properties = self.aws_properties['autoscale']
-        self.app_properties = self.aws_properties['applications'][application]
-        self.autoscale_group_name = self.app_properties['autoscale_group']
+        self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
 
         print "Creating autoscale config %s" % (self.autoscale_group_name)
         autoscale_config = self.create_autoscale_configuration(application, ami_id)
@@ -128,9 +129,6 @@ class TicketeaDeployer(object):
         with an AMI created from it.
         """
         balloon = Balloon("")
-
-        self.app_properties = self.aws_properties['applications'][application]
-        self.gold_properties = self.app_properties['gold']
         if not ami_id:
             ami_id = self.create_ami_from_golden_instance(application)
             print "New AMI from golden image %s" % (ami_id)
