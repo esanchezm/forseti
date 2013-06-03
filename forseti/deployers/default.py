@@ -43,7 +43,11 @@ class TicketeaDeployer(object):
         configs_properties = self.autoscale_properties['configs']
         config_properties = configs_properties[self.autoscale_group_name]
         config_properties['image_id'] = ami_id
-        config = EC2AutoScaleConfig(self.autoscale_group_name, application, config_properties)
+        config = EC2AutoScaleConfig(
+            self.configuration.get_application_configuration(application)['autoscale_group'],
+            application,
+            config_properties
+        )
         config.create()
 
         return config
