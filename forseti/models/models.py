@@ -427,7 +427,7 @@ class CloudWatchMetricAlarm(CloudWatch):
         self.name = name
         self.policy = policy
         self.configuration["alarm_actions"] = [policy.get_policy_arn()]
-        if not dimensions in self.configuration:
+        if not 'dimensions' in self.configuration:
             self.configuration["dimensions"] = {"AutoScalingGroupName": policy.get_group_name()}
 
     def update_or_create(self):
