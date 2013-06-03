@@ -272,13 +272,17 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
         current_instances = self.get_instances_with_status('running')
         self.old_instances = current_instances
-        self.group.desired_capacity = len(current_instances) * 2
-        self.group.max_size = self.group.max_size * 2
-        self.group.update()
 
-        for i in range(1, 15):
+        desired = len(current_instances) * 2
+        i = 0
+        while self.group.desired_capacity != desired:
+            self.group.desired_capacity = desired
+            self.group.max_size = self.group.max_size * 2
+            self.group.update()
             balloon.update(i)
+            i += 1
             time.sleep(1)
+            self.group = self._get_autoscaling_group()
 
         balloon.finish()
 
