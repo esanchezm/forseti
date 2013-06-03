@@ -66,5 +66,5 @@ This is actually a very easy operation. All you need to do is create a new EC2 I
 Once your file is configured, you can deploy your new application code with the CLI doing:
 
 ```
-forsety deploy application_name
+forseti deploy application_name
 ```
