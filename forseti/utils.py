@@ -79,7 +79,7 @@ class TreeFormatter():
         """
         Returns a list rendered in a tree mode.
         """
-        result = ''
+        result = '[{0}]'.format(len(content))
         for value in content:
             result += "\n"+self.display(value, indent=indent+1)
         return result
