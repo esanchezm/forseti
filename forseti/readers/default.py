@@ -39,7 +39,8 @@ class DefaultReader(object):
         Print the current status of the autoscale group of an application.
         """
         daemon = kwargs['daemon'] or False
-        max_activities = int(kwargs['activities']) or 3
+        max_activities = kwargs['activities'] or 3
+        max_activities = int(max_activities)
         group = EC2AutoScaleGroup(
             self.configuration.get_autoscale_group(application),
             application,
