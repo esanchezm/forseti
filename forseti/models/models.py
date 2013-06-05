@@ -448,6 +448,17 @@ class ELBBalancer(ELB):
         super(ELBBalancer, self).__init__(name, application, configuration)
         self.balancer = self.elb.get_all_load_balancers(load_balancer_names=[self.name])[0]
 
+    def get_instance_health(self, instance_id):
+        """
+        Get number of instances running
+        """
+        try:
+            instance_health = self.balancer.get_instance_health([instance_id])[0]
+            return instance_health
+        except:
+            pass
+        return None
+
     def filter_instances_with_health(self, instance_ids, health='InService'):
         """
         Get number of instances running
@@ -457,7 +468,7 @@ class ELBBalancer(ELB):
             try:
                 instance_health = self.balancer.get_instance_health([instance])[0]
             except:
-                continue
+                pass
             if instance_health.state == health:
                 instances.append(instance)
         return instances
