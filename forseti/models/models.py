@@ -415,8 +415,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
             status['Activities'].append(
                 {
                     'Description': activity.description,
-                    'Start': activity.start_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    'End': activity.end_time.strftime("%Y-%m-%d %H:%M:%S") if activity.end_time else 'On progress',
+                    'Start': activity.start_time.strftime("%Y-%m-%d %H:%M:%S%Z"),
+                    'End': activity.end_time.strftime("%Y-%m-%d %H:%M:%S%Z") if activity.end_time else 'On progress',
                     'Cause': activity.cause
                 }
             )
