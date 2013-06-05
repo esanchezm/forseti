@@ -3,7 +3,11 @@ from blessings import Terminal
 from forseti.config import ForsetiConfiguration
 from forseti.exceptions import ForsetiException
 from forseti.models import EC2AutoScaleGroup
-from forseti.utils import DefaultFormatter, JsonFormatter, TreeFormatter
+from forseti.utils import (
+    DefaultFormatter,
+    JsonFormatter,
+    TreeFormatter
+)
 from datetime import datetime
 
 
