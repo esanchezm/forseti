@@ -9,6 +9,7 @@ setup(
     description="Manage your AWS autoscaling groups and policies and create AMIs for autoscaling purposes",
     long_description=open('README.md').read(),
     install_requires=[
+        'blessings',
         'docopt',
         'boto',
         'paramiko',
