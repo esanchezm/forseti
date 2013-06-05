@@ -3,19 +3,24 @@
 
 Usage:
     forseti.py deploy <app> [--ami=<ami-id>]
+    forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
     forseti.py (-h | --help)
     forseti.py --version
 
 Options:
-    --ami=<ami-id> AMI id to be used instead of creating a golden one.
-    -h --help      Show this screen.
-    --version      Show version.
+    --ami=<ami-id>        AMI id to be used instead of creating a golden one.
+    --daemon              Keep running and updating the status
+    --activities=<amount> Number of latest activities to show
+    --format=<format>     How to format the status.
+                          Available values are: plain, json, tree (default)
+    -h --help             Show this screen.
+    --version             Show version.
 """
 
 import json
-import sys
 from docopt import docopt
 from forseti.deployers import TicketeaDeployer
+from forseti.readers import DefaultReader
 import os.path
 
 
@@ -32,9 +37,14 @@ def main():
         print "Invalid JSON configuration file %s\n" % config_path
         raise exception
 
-    deployer = TicketeaDeployer(configuration)
     if arguments['deploy']:
+        deployer = TicketeaDeployer(configuration)
         deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
+    elif arguments['status']:
+        daemon = arguments['--daemon']
+        activities = arguments['--activities']
+        reader = DefaultReader(configuration)
+        reader.status(arguments['<app>'], daemon=daemon, activities=activities)
 
 
 if __name__ == '__main__':
