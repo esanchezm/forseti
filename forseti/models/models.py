@@ -504,7 +504,7 @@ class ELBBalancer(ELB):
             try:
                 instance_health = self.balancer.get_instance_health([instance])[0]
             except:
-                pass
+                continue
             if instance_health.state == health:
                 instances.append(instance)
         return instances
