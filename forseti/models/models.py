@@ -387,6 +387,42 @@ class EC2AutoScaleGroup(EC2AutoScale):
             self.group.update()
             self.group = self._get_autoscaling_group()
 
+    def status(self):
+        """
+        Returns the group status in a dictionary.
+        """
+        self.group = self._get_autoscaling_group()
+        status = {
+            'Name': self.group.name,
+            'Balancer': self.load_balancer().name,
+            'Launch configuration': self.group.launch_config_name,
+            'Instances': [],
+            'Activities': [],
+        }
+        for instance in self.group.instances:
+            elb_status = self.load_balancer().get_instance_health(instance.instance_id)
+            status['Instances'].append(
+                {
+                    'Id': instance.instance_id,
+                    'Status': instance.health_status,
+                    'Launch configuration': instance.launch_config_name,
+                    'Availability zone': instance.availability_zone,
+                    'ELB status': elb_status.state if elb_status else 'N/A',
+                    'ELB reason': elb_status.description if elb_status else 'N/A'
+                }
+            )
+        for activity in self.group.get_activities():
+            status['Activities'].append(
+                {
+                    'Description': activity.description,
+                    'Start': activity.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'End': activity.end_time.strftime("%Y-%m-%d %H:%M:%S") if activity.end_time else 'On progress',
+                    'Cause': activity.cause
+                }
+            )
+
+        return status
+
 
 class EC2AutoScalePolicy(EC2AutoScale):
     """
