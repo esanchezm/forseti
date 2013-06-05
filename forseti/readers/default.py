@@ -1,9 +1,9 @@
 import time
 from blessings import Terminal
+from forseti.config import ForsetiConfiguration
 from forseti.exceptions import ForsetiException
 from forseti.models import EC2AutoScaleGroup
 from forseti.utils import DefaultFormatter, JsonFormatter, TreeFormatter
-from pprint import pprint
 from datetime import datetime
 
 
@@ -13,7 +13,7 @@ class DefaultReader(object):
     def __init__(self, aws_properties, *args, **kwargs):
         self.configuration = ForsetiConfiguration(aws_properties)
         self.term = Terminal()
-        format = int(kwargs['format']) or 'tree'
+        format = kwargs['format'] or 'tree'
         self.formatter = self.get_formatter(format)
 
     def get_formatter(self, format):

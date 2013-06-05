@@ -41,9 +41,10 @@ def main():
         deployer = TicketeaDeployer(configuration)
         deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
     elif arguments['status']:
+        format = arguments['--format']
+        reader = DefaultReader(configuration, format=format)
         daemon = arguments['--daemon']
         activities = arguments['--activities']
-        reader = DefaultReader(configuration)
         reader.status(arguments['<app>'], daemon=daemon, activities=activities)
 
 
