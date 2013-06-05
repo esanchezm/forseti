@@ -63,3 +63,5 @@ class DefaultReader(object):
                     time.sleep(1)
             except (KeyboardInterrupt, SystemExit):
                 running = False
+            finally:
+                self.term.exit_fullscreen()
