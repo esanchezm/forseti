@@ -192,7 +192,7 @@ class EC2AutoScaleConfig(EC2AutoScale):
         version = 1
         found = False
         while not found:
-            name = "%s-%s-%s" % (self.name, self.today, version)
+            name = "%s-%s" % (self.name, version)
             launch_configurations = self.autoscale.get_all_launch_configurations(names=[name])
             if launch_configurations:
                 version += 1
