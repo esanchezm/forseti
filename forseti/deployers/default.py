@@ -6,7 +6,7 @@ from forseti.models import (
     CloudWatchMetricAlarm
 )
 from forseti.utils import Balloon
-from forseti.config import ForsetiConfiguration
+from forseti.configuration_reader import ForsetiConfiguration
 
 
 class TicketeaDeployer(object):

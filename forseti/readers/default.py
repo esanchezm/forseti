@@ -1,6 +1,6 @@
 import time
 from blessings import Terminal
-from forseti.config import ForsetiConfiguration
+from forseti.configuration_reader import ForsetiConfiguration
 from forseti.exceptions import ForsetiException
 from forseti.models import EC2AutoScaleGroup
 from forseti.utils import (
