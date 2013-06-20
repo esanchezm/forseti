@@ -1,1 +1,2 @@
+from forseti.deployers.deploy_and_snapshot import DeployAndSnapshotDeployer
 from forseti.deployers.golden_instance import GoldenInstanceDeployer
