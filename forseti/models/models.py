@@ -257,7 +257,10 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         Get a list of instances in this autoscale group whose status matches `status`
         """
-        instances_ids = [instance.instance_id for instance in self._get_autoscaling_group().instances]
+        group = self._get_autoscaling_group()
+        if group is None:
+            return []
+        instances_ids = [instance.instance_id for instance in group.instances]
 
         if not instances_ids:
             return []
