@@ -94,7 +94,6 @@ class EC2Instance(EC2):
         return ami_id
 
 
-
 class GoldenEC2Instance(EC2Instance):
     """
     A golden instance is the one which is used as a base to create the
@@ -185,45 +184,6 @@ class GoldenEC2Instance(EC2Instance):
         os.system(command)
         os.chdir(former_directory)
         balloon.finish()
-
-    def create_image(self):
-        """
-        Create an AMI from the golden instance started
-        """
-        balloon = Balloon("Golden instance %s creating image" % self.instance.id)
-        i = 0
-
-        amis = self.ec2.get_all_images(
-            owners=['self'],
-            filters={
-                'tag:forseti:golden-image': True,
-                'tag:forseti:application': self.application,
-                'tag:forseti:date': self.today,
-            }
-        )
-        ami_name = "golden-%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
-        ami_id = self.instance.create_image(ami_name, description=ami_name)
-        balloon.update(i)
-        i += 1
-        time.sleep(1)
-        ami = self.ec2.get_all_images(image_ids=(ami_id,))[0]
-
-        while ami.update() == "pending":
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-
-        balloon.finish()
-
-        if ami.update() == "available":
-            ami.add_tag("Name", ami_name)
-            ami.add_tag('forseti:golden-image', True)
-            ami.add_tag('forseti:application', self.application)
-            ami.add_tag('forseti:date', self.today)
-        else:
-            raise EC2InstanceException("Golden image %s could not be created" % self.instance.id)
-
-        return ami_id
 
 
 class EC2AutoScaleConfig(EC2AutoScale):
