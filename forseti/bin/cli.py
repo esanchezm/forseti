@@ -19,9 +19,31 @@ Options:
 
 import json
 from docopt import docopt
-from forseti.deployers import TicketeaDeployer
+from forseti.configuration_reader import ForsetiConfiguration
+from forseti.deployers import (
+    DeployAndSnapshotDeployer,
+    GoldenInstanceDeployer,
+)
+from forseti.exceptions import ForsetiConfigurationException
 from forseti.readers import DefaultReader
 import os.path
+
+
+def get_deployer(configuration, application):
+    application_configuration = configuration.get_application_configuration(application)
+    if not 'deployment_strategy' in application_configuration:
+        raise ForsetiConfigurationException(
+            'Missing `deployment_strategy` in application configuration'
+        )
+    strategy = application_configuration['deployment_strategy']
+    if strategy == 'deploy_and_snapshot':
+        return DeployAndSnapshotDeployer(configuration)
+    if strategy == 'golden_instances':
+        return GoldenInstanceDeployer(configuration)
+
+    raise ForsetiConfigurationException(
+        'Unknown deployment strategy \'%s\' in application configuration' % strategy
+    )
 
 
 def main():
@@ -32,13 +54,13 @@ def main():
         raise ValueError("Configuration file does not exist at %r" % config_path)
 
     try:
-        configuration = json.load(open(config_path))
+        configuration = ForsetiConfiguration(json.load(open(config_path)))
     except ValueError as exception:
         print "Invalid JSON configuration file %s\n" % config_path
         raise exception
 
     if arguments['deploy']:
-        deployer = TicketeaDeployer(configuration)
+        deployer = get_deployer(configuration, arguments['<app>'])
         deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
     elif arguments['status']:
         format = arguments['--format']
