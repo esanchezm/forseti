@@ -8,3 +8,7 @@ class EC2InstanceException(ForsetiException):
 
 class ForsetiConfigurationException(ForsetiException):
     pass
+
+
+class ForsetiDeployException(ForsetiException):
+    pass
