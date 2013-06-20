@@ -27,17 +27,27 @@ class EC2Instance(EC2):
     EC2 Instance
     """
 
-    def __init__(self, application, configuration=None):
+    def __init__(self, application, configuration=None, instance_id=None):
         super(EC2Instance, self).__init__(application, configuration)
-        self.instance = None
+        self.instance_id = instance_id
+        if self.instance_id:
+            self.resource = self.ec2.get_all_instances(instance_ids=[self.instance_id])[0]
+            self.instance = self.resource.instances[0]
+        else:
+            self.instance = None
 
     def launch(self):
         """
-        Start EC2 instance in AWS
+        Start EC2 instance in AWS. Raise EC2InstanceException if `instance_id`
+        is set.
         """
+        if self.instance and self.instance_id:
+            raise EC2InstanceException("Instance %s is already running" % self.instance.id)
+
         print "Starting instance"
         self.resource = self.ec2.run_instances(**self.configuration)
         self.instance = self.resource.instances[0]
+        self.instance_id = self.instance.id
 
     def terminate(self):
         """
@@ -45,6 +55,44 @@ class EC2Instance(EC2):
         """
         print "Terminating instance %s" % self.instance.id
         self.ec2.terminate_instances([self.instance.id])
+
+    def create_image(self):
+        """
+        Create an AMI from a running instance
+        """
+        balloon = Balloon("Instance %s creating image" % self.instance.id)
+        i = 0
+
+        amis = self.ec2.get_all_images(
+            owners=['self'],
+            filters={
+                'tag:forseti:application': self.application,
+                'tag:forseti:date': self.today,
+            }
+        )
+        ami_name = "%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
+        ami_id = self.instance.create_image(ami_name, description=ami_name)
+        balloon.update(i)
+        i += 1
+        time.sleep(1)
+        ami = self.ec2.get_all_images(image_ids=(ami_id,))[0]
+
+        while ami.update() == "pending":
+            balloon.update(i)
+            i += 1
+            time.sleep(1)
+
+        balloon.finish()
+
+        if ami.update() == "available":
+            ami.add_tag("Name", ami_name)
+            ami.add_tag('forseti:application', self.application)
+            ami.add_tag('forseti:date', self.today)
+        else:
+            raise EC2InstanceException("Image %s could not be created" % self.instance.id)
+
+        return ami_id
+
 
 
 class GoldenEC2Instance(EC2Instance):
