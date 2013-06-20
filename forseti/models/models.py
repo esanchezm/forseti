@@ -286,6 +286,20 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
         balloon.finish()
 
+    def suspend_processes(self, scaling_processes=None):
+        """
+        Suspend autoscaling processes in the group.
+        """
+        self.group = self._get_autoscaling_group()
+        self.group.suspend_processes(scaling_processes)
+
+    def resume_processes(self, scaling_processes=None):
+        """
+        Resume autoscaling processes in the group.
+        """
+        self.group = self._get_autoscaling_group()
+        self.group.resume_processes(scaling_processes)
+
     def wait_for_new_instances_ready(self):
         """
         Wait for instances launched by autoscale group to be up, running and in the balancer
