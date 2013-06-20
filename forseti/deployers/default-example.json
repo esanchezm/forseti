@@ -58,6 +58,7 @@
         "api": {
             "autoscale_group": "frontend",
             "elb": "frontend-balancer",
+            "deployment_strategy" : "golden_instances",
             "scale_policies": ["scale_up_policy", "scale_down_policy"],
             "gold": {
                 "image_id": "ami-00000000",
