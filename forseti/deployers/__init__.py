@@ -1,1 +1,1 @@
-from forseti.deployers.default import TicketeaDeployer
+from forseti.deployers.golden_instance import GoldenInstanceDeployer

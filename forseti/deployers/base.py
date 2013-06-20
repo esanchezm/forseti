@@ -6,35 +6,17 @@ from forseti.models import (
     CloudWatchMetricAlarm
 )
 from forseti.utils import Balloon
-from forseti.configuration_reader import ForsetiConfiguration
 
 
-class TicketeaDeployer(object):
-    """Deployer for ticketea's infrastructure"""
+class BaseDeployer(object):
+    """Base deployer class"""
 
-    def __init__(self, aws_properties):
-        self.configuration = ForsetiConfiguration(aws_properties)
+    def __init__(self, configuration):
+        self.configuration = configuration
         self.gold_instance = None
         self.policies = {}
         self.alarms = {}
         self.autoscale_group_name = None
-
-    def create_ami_from_golden_instance(self, application):
-        """
-        Create an AMI from a golden EC2 instance
-        """
-        self.gold_instance = GoldenEC2Instance(
-            application,
-            self.configuration.get_gold_instance_configuration(application)
-        )
-
-        self.gold_instance.launch_and_wait()
-        self.gold_instance.provision()
-        ami_id = self.gold_instance.create_image()
-        self.gold_instance.terminate()
-        self.gold_instance = None
-
-        return ami_id
 
     def create_autoscale_configuration(self, application, ami_id):
         """
@@ -119,19 +101,13 @@ class TicketeaDeployer(object):
         self.update_or_create_metric_alarms(application, group)
         print "Created metric alarms"
 
-        print "Waiting until instances are up and running"
-        group.apply_launch_configuration_for_deployment()
-        print "All instances are running"
+        return group
 
-    def deploy(self, application, ami_id=None):
+    def deploy(self, application, ami_id):
         """
-        Do the code deployment in a golden instance and setup an autoscale group
-        with an AMI created from it.
+        Do the deployment of an AMI.
         """
         balloon = Balloon("")
-        if not ami_id:
-            ami_id = self.create_ami_from_golden_instance(application)
-            print "New AMI from golden image %s" % (ami_id)
         self.setup_autoscale(application, ami_id)
 
         balloon.finish()
