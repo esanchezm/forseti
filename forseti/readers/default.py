@@ -1,6 +1,5 @@
 import time
 from blessings import Terminal
-from forseti.configuration_reader import ForsetiConfiguration
 from forseti.exceptions import ForsetiException
 from forseti.models import EC2AutoScaleGroup
 from forseti.utils import (
@@ -23,8 +22,8 @@ class DefaultReader(object):
         'Terminating': 'yellow',
     }
 
-    def __init__(self, aws_properties, *args, **kwargs):
-        self.configuration = ForsetiConfiguration(aws_properties)
+    def __init__(self, configuration, *args, **kwargs):
+        self.configuration = configuration
         self.term = Terminal()
         format = kwargs['format'] or 'tree'
         self.formatter = self.get_formatter(format)
