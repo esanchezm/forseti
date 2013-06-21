@@ -35,7 +35,7 @@ class GoldenInstanceDeployer(BaseDeployer):
         :param application: Application name
         :param ami_id: AMI id used for the new autoscale system
         """
-        group = super(application, ami_id)
+        group = super(GoldenInstanceDeployer, self).setup_autoscale(application, ami_id)
 
         print "Waiting until instances are up and running"
         group.apply_launch_configuration_for_deployment()
