@@ -91,7 +91,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             # Select a random instance and create an AMI from it
             instance = choice(instances)
             try:
-                ami_id = instance.create_image()
+                ami_id = instance.create_image(no_reboot=True)
             except Exception as exception:
                 group.resume_processes()
                 raise exception
