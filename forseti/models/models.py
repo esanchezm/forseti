@@ -56,7 +56,7 @@ class EC2Instance(EC2):
         print "Terminating instance %s" % self.instance.id
         self.ec2.terminate_instances([self.instance.id])
 
-    def create_image(self):
+    def create_image(self, no_reboot=False):
         """
         Create an AMI from a running instance
         """
@@ -71,7 +71,7 @@ class EC2Instance(EC2):
             }
         )
         ami_name = "%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
-        ami_id = self.instance.create_image(ami_name, description=ami_name)
+        ami_id = self.instance.create_image(ami_name, description=ami_name, no_reboot=no_reboot)
         balloon.update(i)
         i += 1
         time.sleep(1)
