@@ -403,7 +403,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
         else:
             self.group.launch_config_name = self.configuration['launch_config']
             self.group.availability_zones = self.configuration['availability_zones']
-            self.group.desired_capacity = self.configuration['desired_capacity']
+            if 'desired_capacity' in self.configuration:
+                self.group.desired_capacity = self.configuration['desired_capacity']
             self.group.max_size = self.configuration['max_size']
             self.group.min_size = self.configuration['min_size']
             self.group.load_balancers = self.configuration['load_balancers']
