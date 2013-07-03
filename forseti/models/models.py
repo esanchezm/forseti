@@ -248,6 +248,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         Returns an `ELBBalancer` instance associated to the autoscale group
         """
+        if not self.group.load_balancers:
+            return None
         if self.elb is not None:
             return self.elb
         self.elb = ELBBalancer(self.group.load_balancers[0], self.application)
@@ -420,13 +422,15 @@ class EC2AutoScaleGroup(EC2AutoScale):
         self.group = self._get_autoscaling_group()
         status = {
             'Name': self.group.name,
-            'Balancer': self.load_balancer().name,
+            'Balancer': self.load_balancer().name if self.load_balancer() else 'N/A',
             'Launch configuration': self.group.launch_config_name,
             'Instances': [],
             'Activities': [],
         }
         for instance in self.group.instances:
-            elb_status = self.load_balancer().get_instance_health(instance.instance_id)
+            elb_status = None
+            if self.load_balancer():
+                elb_status = self.load_balancer().get_instance_health(instance.instance_id)
             status['Instances'].append(
                 {
                     'Id': instance.instance_id,
