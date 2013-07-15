@@ -304,14 +304,16 @@ class EC2AutoScaleGroup(EC2AutoScale):
         Suspend autoscaling processes in the group.
         """
         self.group = self._get_autoscaling_group()
-        self.group.suspend_processes(scaling_processes)
+        if self.group:
+            self.group.suspend_processes(scaling_processes)
 
     def resume_processes(self, scaling_processes=None):
         """
         Resume autoscaling processes in the group.
         """
         self.group = self._get_autoscaling_group()
-        self.group.resume_processes(scaling_processes)
+        if self.group:
+            self.group.resume_processes(scaling_processes)
 
     def wait_for_new_instances_ready(self):
         """
