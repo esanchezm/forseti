@@ -169,16 +169,23 @@ class GoldenEC2Instance(EC2Instance):
 
         balloon.finish()
 
-    def provision(self):
+    def provision(self, deployer_args=None):
         """
         Provisions machine using `command` specified in configuration file, `command` is
         executed locally within `working_directory` specified path.
+
+        Some extra arguments can be passed to the command by
+        using `deployer_args`
         """
         self.wait_for_ssh()
         balloon = Balloon("Deployed new code on golden instance %s" % self.instance.id)
         command = self.provision_configuration['command'].format(
             dns_name=self.instance.public_dns_name
         )
+        if deployer_args:
+            # `deployer_args` is supposed to be a string
+            command = '%s %s' % (command, deployer_args)
+
         former_directory = os.getcwd()
         os.chdir(self.provision_configuration['working_directory'])
         os.system(command)
