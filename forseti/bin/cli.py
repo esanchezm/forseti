@@ -40,9 +40,9 @@ def get_deployer(configuration, application, extra_args=None):
     extra_args = extra_args or []
     extra_args = ' '.join(extra_args)
     if strategy == 'deploy_and_snapshot':
-        return DeployAndSnapshotDeployer(configuration)
+        return DeployAndSnapshotDeployer(configuration, extra_args)
     if strategy == 'golden_instances':
-        return GoldenInstanceDeployer(configuration)
+        return GoldenInstanceDeployer(configuration, extra_args)
 
     raise ForsetiConfigurationException(
         'Unknown deployment strategy \'%s\' in application configuration' % strategy
