@@ -16,8 +16,8 @@ from forseti.utils import Balloon
 class DeployAndSnapshotDeployer(BaseDeployer):
     """Deployer for ticketea's infrastructure"""
 
-    def __init__(self, configuration):
-        super(DeployAndSnapshotDeployer, self).__init__(configuration)
+    def __init__(self, configuration, command_args=None):
+        super(DeployAndSnapshotDeployer, self).__init__(configuration, command_args)
         self.group = None
 
     def _get_group(self, application):
@@ -57,6 +57,8 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         command = deploy_configuration['command'].format(
             dns_name=','.join([instance.instance.public_dns_name for instance in instances])
         )
+        if self.command_args:
+            command = '%s %s' % (command, self.command_args)
 
         former_directory = os.getcwd()
         os.chdir(deploy_configuration['working_directory'])

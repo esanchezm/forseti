@@ -11,12 +11,13 @@ from forseti.utils import Balloon
 class BaseDeployer(object):
     """Base deployer class"""
 
-    def __init__(self, configuration):
+    def __init__(self, configuration, command_args=None):
         self.configuration = configuration
         self.gold_instance = None
         self.policies = {}
         self.alarms = {}
         self.autoscale_group_name = None
+        self.command_args = command_args or ''
 
     def create_autoscale_configuration(self, application, ami_id):
         """

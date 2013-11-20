@@ -6,8 +6,8 @@ from forseti.utils import Balloon
 class GoldenInstanceDeployer(BaseDeployer):
     """Deployer for ticketea's infrastructure"""
 
-    def __init__(self, configuration):
-        super(GoldenInstanceDeployer, self).__init__(configuration)
+    def __init__(self, configuration, command_args=None):
+        super(GoldenInstanceDeployer, self).__init__(configuration, command_args)
         self.gold_instance = None
 
     def create_ami_from_golden_instance(self, application):
@@ -20,7 +20,7 @@ class GoldenInstanceDeployer(BaseDeployer):
         )
 
         self.gold_instance.launch_and_wait()
-        self.gold_instance.provision()
+        self.gold_instance.provision(self.command_args)
         ami_id = self.gold_instance.create_image()
         self.gold_instance.terminate()
         self.gold_instance = None
