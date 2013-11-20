@@ -2,7 +2,7 @@
 """Forseti is a tool to manage AWS autoscaling groups by using golden AMIs.
 
 Usage:
-    forseti.py deploy <app> [--ami=<ami-id>]
+    forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
     forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
     forseti.py (-h | --help)
     forseti.py --version
@@ -15,6 +15,7 @@ Options:
                           Available values are: plain, json, tree (default)
     -h --help             Show this screen.
     --version             Show version.
+    -- <args>...          Extra parameters to be passed to the deploy command
 """
 
 import json
@@ -29,13 +30,15 @@ from forseti.readers import DefaultReader
 import os.path
 
 
-def get_deployer(configuration, application):
+def get_deployer(configuration, application, extra_args=None):
     application_configuration = configuration.get_application_configuration(application)
     if not 'deployment_strategy' in application_configuration:
         raise ForsetiConfigurationException(
             'Missing `deployment_strategy` in application configuration'
         )
     strategy = application_configuration['deployment_strategy']
+    extra_args = extra_args or []
+    extra_args = ' '.join(extra_args)
     if strategy == 'deploy_and_snapshot':
         return DeployAndSnapshotDeployer(configuration)
     if strategy == 'golden_instances':
@@ -60,7 +63,11 @@ def main():
         raise exception
 
     if arguments['deploy']:
-        deployer = get_deployer(configuration, arguments['<app>'])
+        deployer = get_deployer(
+            configuration,
+            arguments['<app>'],
+            arguments['<args>']
+        )
         deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
     elif arguments['status']:
         format = arguments['--format']
