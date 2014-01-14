@@ -4,6 +4,7 @@
 Usage:
     forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
     forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
+    forseti.py maintenance <app> (on|off)
     forseti.py (-h | --help)
     forseti.py --version
 
@@ -25,6 +26,7 @@ from forseti.deployers import (
     DeployAndSnapshotDeployer,
     GoldenInstanceDeployer,
 )
+from forseti.commands import MaintenanceCommand
 from forseti.exceptions import ForsetiConfigurationException
 from forseti.readers import DefaultReader
 import os.path
@@ -75,6 +77,12 @@ def main():
         daemon = arguments['--daemon']
         activities = arguments['--activities']
         reader.status(arguments['<app>'], daemon=daemon, activities=activities)
+    elif arguments['maintenance']:
+        maintenance = MaintenanceCommand(configuration, arguments['<app>'])
+        if arguments['on']:
+            maintenance.on()
+        else:
+            maintenance.off()
 
 
 if __name__ == '__main__':

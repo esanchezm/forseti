@@ -281,6 +281,20 @@ class EC2AutoScaleGroup(EC2AutoScale):
                 instances.append(state.id)
         return instances
 
+    def get_instances_dns_names_with_status(self, status):
+        """
+        Get a list of public DNS names of the instances within this autoscale group
+        whose status matches `status`
+        """
+        running_instances_ec2_names = self.get_instances_with_status(status)
+
+        dns_names = []
+        for instance_id in running_instances_ec2_names:
+            dns_names.append(
+                EC2Instance(self.application, configuration=None, instance_id=instance_id).instance.public_dns_name
+            )
+        return dns_names
+
     def increase_desired_capacity(self):
         """
         Increases the autoscale group desired capacity and max_size, this implies launching
