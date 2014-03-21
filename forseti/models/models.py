@@ -578,3 +578,9 @@ class ELBBalancer(ELB):
 
     def get_health_check_interval(self):
         return self.balancer.health_check.interval
+
+    def deregister_instances(self, instances):
+        return self.balancer.deregister_instances(instances)
+
+    def register_instances(self, instances):
+        return self.balancer.register_instances(instances)
