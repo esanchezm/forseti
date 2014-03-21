@@ -99,7 +99,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 group.resume_processes()
                 raise exception
             finally:
-                group.register_instance_in_load_balancer(instance)
+                group.register_instance_in_load_balancer(instance, wait=False)
 
             print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
 
