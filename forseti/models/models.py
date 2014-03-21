@@ -583,7 +583,8 @@ class ELBBalancer(ELB):
         return instances
 
     def wait_for_instances_with_health(self, instances_ids, health='InService'):
-        balloon = Balloon("Waiting for instances until they're in the balancer %s with status %s" % (
+        balloon = Balloon("Waiting for %d instances until they're in the balancer %s with status %s" % (
+            len(instances_ids),
             self.balancer.name,
             health
         ))
