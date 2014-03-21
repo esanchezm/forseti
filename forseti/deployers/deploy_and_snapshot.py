@@ -105,10 +105,8 @@ class DeployAndSnapshotDeployer(BaseDeployer):
 
         try:
             self.setup_autoscale(application, ami_id)
-        except Exception as exception:
+        finally:
             group.resume_processes()
-            raise exception
-        group.resume_processes()
 
         balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
