@@ -342,7 +342,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         elb = self.load_balancer()
         if elb:
-            instances_ids = [instance.id for instance in instances]
+            instances_ids = [instance.instance_id for instance in instances]
             elb.deregister_instances(instances_ids)
             if wait:
                 elb.wait_for_instances_with_health(instances_ids, health='OutOfService')
@@ -353,7 +353,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         elb = self.load_balancer()
         if elb:
-            instances_ids = [instance.id for instance in instances]
+            instances_ids = [instance.instance_id for instance in instances]
             elb.register_instances(instances_ids)
             if wait:
                 elb.wait_for_instances_with_health(instances_ids, health='InService')
