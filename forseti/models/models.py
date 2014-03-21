@@ -336,25 +336,27 @@ class EC2AutoScaleGroup(EC2AutoScale):
         if self.group:
             self.group.resume_processes(scaling_processes)
 
-    def deregister_instance_from_load_balancer(self, instance, wait=True):
+    def deregister_instance_from_load_balancer(self, instances, wait=True):
         """
-        Deregister an instance in the ELB of the autoscale group
+        Deregister instances in the ELB of the autoscale group
         """
         elb = self.load_balancer()
         if elb:
-            elb.deregister_instances((instance.instance_id))
+            instances_ids = [instance.id for instance in instances]
+            elb.deregister_instances(instances_ids)
             if wait:
-                elb.wait_for_instances_with_health((instance.instance_id), health='OutOfService')
+                elb.wait_for_instances_with_health(instances_ids, health='OutOfService')
 
-    def register_instance_in_load_balancer(self, instance, wait=True):
+    def register_instance_in_load_balancer(self, instances, wait=True):
         """
-        Register an instance in the ELB of the autoscale group
+        Register instances in the ELB of the autoscale group
         """
         elb = self.load_balancer()
         if elb:
-            elb.register_instances((instance.instance_id))
+            instances_ids = [instance.id for instance in instances]
+            elb.register_instances(instances_ids)
             if wait:
-                elb.wait_for_instances_with_health((instance.instance_id), health='InService')
+                elb.wait_for_instances_with_health(instances_ids, health='InService')
 
     def wait_for_new_instances_ready(self):
         """
