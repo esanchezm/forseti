@@ -73,6 +73,24 @@ class DeployAndSnapshotDeployer(BaseDeployer):
 
         return instances
 
+    def choice_instance(self, instances):
+        """
+        Choice a random instance to generate an AMI from it.
+
+        It will avoid selecting instances with the tag 'forseti:avoid_ami_creation'
+        """
+        have_instance = False
+        while not have_instance and len(instances):
+            instance = choice(instances)
+            if not instance.has_tag('forseti:avoid_ami_creation'):
+                instances.remove(instance)
+                have_instance = True
+            else:
+                print "Avoiding instance %s from AMI creation" % (instance.instance_id)
+
+        return instance
+
+
     def deploy(self, application, ami_id=None):
         """
         Do the code deployment by pushing the code in all instances and create
