@@ -114,8 +114,8 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 raise exception
 
             # Select a random instance and create an AMI from it
-            instance = choice(instances)
             try:
+                instance = self.choice_instance(instances)
                 group.deregister_instance_from_load_balancer([instance])
                 ami_id = instance.create_image(no_reboot=False)
             except Exception as exception:
