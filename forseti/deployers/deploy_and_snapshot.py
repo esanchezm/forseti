@@ -88,8 +88,13 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             else:
                 print "Avoiding instance %s from AMI creation" % (instance.instance_id)
 
-        return instance
+        if not have_instance:
+            raise ForsetiException(
+                "No instance found to create image from. "
+                "Are all of them marked with `forseti:avoid_ami_creation` tag?"
+            )
 
+        return instance
 
     def deploy(self, application, ami_id=None):
         """
