@@ -56,6 +56,12 @@ class EC2Instance(EC2):
         print "Terminating instance %s" % self.instance.id
         self.ec2.terminate_instances([self.instance.id])
 
+    def has_tag(self, tag):
+        """
+        Checks if an instance have an specific tag
+        """
+        return tag in self.instance.tags
+
     def create_image(self, no_reboot=False):
         """
         Create an AMI from a running instance
