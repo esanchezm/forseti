@@ -82,11 +82,11 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         have_instance = False
         while not have_instance and len(instances):
             instance = choice(instances)
-            if not instance.has_tag('forseti:avoid_ami_creation'):
-                instances.remove(instance)
-                have_instance = True
-            else:
+            if instance.has_tag('forseti:avoid_ami_creation'):
                 print "Avoiding instance %s from AMI creation" % (instance.instance_id)
+                instances = instances.remove(instance)
+            else:
+                have_instance = True
 
         if not have_instance:
             raise ForsetiException(
