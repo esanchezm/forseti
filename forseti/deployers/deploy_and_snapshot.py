@@ -84,7 +84,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             instance = choice(instances)
             if instance.has_tag('forseti:avoid_ami_creation'):
                 print "Avoiding instance %s from AMI creation" % (instance.instance_id)
-                instances = instances.remove(instance)
+                instances.remove(instance)
             else:
                 have_instance = True
 
