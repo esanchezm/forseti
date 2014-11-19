@@ -233,7 +233,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
     def __init__(self, name, application, configuration=None):
         super(EC2AutoScaleGroup, self).__init__(name, application, configuration)
         self.group = None
-        self.elb = None
+        self.elbs = []
         self.name = name  # Do not add version to the name
 
     def set_launch_configuration(self, launch_configuration):
@@ -257,16 +257,17 @@ class EC2AutoScaleGroup(EC2AutoScale):
             return groups[0]
         return None
 
-    def load_balancer(self):
+    def load_balancers(self):
         """
-        Returns an `ELBBalancer` instance associated to the autoscale group
+        Returns a list of `ELBBalancer` instances associated to the autoscale group
         """
         if not self.group.load_balancers:
             return None
-        if self.elb is not None:
-            return self.elb
-        self.elb = ELBBalancer(self.group.load_balancers[0], self.application)
-        return self.elb
+        if self.elbs:
+            return self.elbs
+        for balancer in self.group.load_balancers:
+            self.elbs.append(ELBBalancer(balancer, self.application))
+        return self.elbs
 
     def get_instances_with_status(self, status):
         """
@@ -342,27 +343,29 @@ class EC2AutoScaleGroup(EC2AutoScale):
         if self.group:
             self.group.resume_processes(scaling_processes)
 
-    def deregister_instance_from_load_balancer(self, instances, wait=True):
+    def deregister_instance_from_load_balancers(self, instances, wait=True):
         """
         Deregister instances in the ELB of the autoscale group
         """
-        elb = self.load_balancer()
-        if elb:
+        elbs = self.load_balancers()
+        if elbs:
             instances_ids = [instance.instance_id for instance in instances]
-            elb.deregister_instances(instances_ids)
-            if wait:
-                elb.wait_for_instances_with_health(instances_ids, health='OutOfService')
+            for elb in elbs:
+                elb.deregister_instances(instances_ids)
+                if wait:
+                    elb.wait_for_instances_with_health(instances_ids, health='OutOfService')
 
-    def register_instance_in_load_balancer(self, instances, wait=True):
+    def register_instance_in_load_balancers(self, instances, wait=True):
         """
         Register instances in the ELB of the autoscale group
         """
-        elb = self.load_balancer()
-        if elb:
+        elbs = self.load_balancers()
+        if elbs:
             instances_ids = [instance.instance_id for instance in instances]
-            elb.register_instances(instances_ids)
-            if wait:
-                elb.wait_for_instances_with_health(instances_ids, health='InService')
+            for elb in elbs:
+                elb.register_instances(instances_ids)
+                if wait:
+                    elb.wait_for_instances_with_health(instances_ids, health='InService')
 
     def wait_for_new_instances_ready(self):
         """
@@ -382,16 +385,18 @@ class EC2AutoScaleGroup(EC2AutoScale):
         new_instances = set(instances) - set(self.old_instances)
 
         # Ask the balancer to wait
-        self.load_balancer().wait_for_instances_with_health(new_instances)
+        for balancer in self.load_balancers():
+            balancer.wait_for_instances_with_health(new_instances)
 
         # We do it twice, because sometimes the balancer health check is a bit tricky.
         balloon = Balloon("Waiting for another balancer health check pass")
-        for i in range(1, self.load_balancer().get_health_check_interval()):
+        for i in range(1, self.load_balancers()[0].get_health_check_interval()):
             balloon.update(i)
             time.sleep(1)
         balloon.finish()
 
-        self.load_balancer().wait_for_instances_with_health(new_instances)
+        for balancer in self.load_balancers():
+            balancer.wait_for_instances_with_health(new_instances)
 
     def terminate_instances(self, instances_ids):
         """
@@ -473,25 +478,33 @@ class EC2AutoScaleGroup(EC2AutoScale):
         self.group = self._get_autoscaling_group()
         status = {
             'Name': self.group.name,
-            'Balancer': self.load_balancer().name if self.load_balancer() else 'N/A',
             'Launch configuration': self.group.launch_config_name,
             'Instances': [],
             'Activities': [],
+            'Balancers': 'N/A',
+            'Instances': [],
         }
+
+        if self.load_balancers():
+            balancer_names = map(lambda e: e.name, self.load_balancers())
+            status['Balancers'] = ", ".join(balancer_names)
+
         for instance in self.group.instances:
-            elb_status = None
-            if self.load_balancer():
-                elb_status = self.load_balancer().get_instance_health(instance.instance_id)
-            status['Instances'].append(
-                {
-                    'Id': instance.instance_id,
-                    'Status': instance.health_status,
-                    'Launch configuration': instance.launch_config_name,
-                    'Availability zone': instance.availability_zone,
-                    'ELB status': elb_status.state if elb_status else 'N/A',
-                    'ELB reason': elb_status.description if elb_status else 'N/A'
-                }
-            )
+            elb_status = {}
+            for balancer in self.load_balancers():
+                health = balancer.get_instance_health(instance.instance_id)
+                elb_status['ELB %s status' % balancer.name] = health.state
+                elb_status['ELB %s reason' % balancer.name] = health.description
+
+            instance_status = {
+                'Id': instance.instance_id,
+                'Status': instance.health_status,
+                'Launch configuration': instance.launch_config_name,
+                'Availability zone': instance.availability_zone,
+            }
+            instance_status.update(elb_status)
+
+            status['Instances'].append(instance_status)
         for activity in self.group.get_activities():
             status['Activities'].append(
                 {

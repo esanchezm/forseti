@@ -117,14 +117,14 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             instance = None
             try:
                 instance = self.choice_instance(instances)
-                group.deregister_instance_from_load_balancer([instance])
+                group.deregister_instance_from_load_balancers([instance])
                 ami_id = instance.create_image(no_reboot=False)
             except Exception as exception:
                 group.resume_processes()
                 raise exception
             finally:
                 if instance:
-                    group.register_instance_in_load_balancer([instance], wait=False)
+                    group.register_instance_in_load_balancers([instance], wait=False)
 
             print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
 
