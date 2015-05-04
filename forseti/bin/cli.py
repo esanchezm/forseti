@@ -39,7 +39,7 @@ import os.path
 
 def get_deployer(configuration, application, extra_args=None):
     application_configuration = configuration.get_application_configuration(application)
-    if not 'deployment_strategy' in application_configuration:
+    if 'deployment_strategy' not in application_configuration:
         raise ForsetiConfigurationException(
             'Missing `deployment_strategy` in application configuration'
         )

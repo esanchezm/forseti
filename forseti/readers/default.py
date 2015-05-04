@@ -11,7 +11,9 @@ from datetime import datetime
 
 
 class DefaultReader(object):
-    """Deployer for ticketea's infrastructure"""
+    """
+    Autoscaling status reading
+    """
 
     # FIXME: These values could be defined in forseti models
     COLORED_VALUES = {
