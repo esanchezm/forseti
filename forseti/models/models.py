@@ -253,6 +253,23 @@ class EC2AutoScaleConfig(EC2AutoScale):
         launch_configuration = LaunchConfiguration(name=self.name, **self.configuration)
         self.resource = self.autoscale.create_launch_configuration(launch_configuration)
 
+    def delete(self):
+        """
+        Deletes a launch configuration and its associated AMI
+        """
+        self.ami().delete()
+        self.autoscale.delete_launch_configuration(self.name)
+
+    def ami(self):
+        """
+        Get the AMI associated to the launch configuration
+        """
+        return EC2AMI(
+            self.application,
+            self.resource.image_id,
+            resource=self.ec2.get_image(image_id=self.resource.image_id)
+        )
+
 
 class EC2AutoScaleGroup(EC2AutoScale):
     """
