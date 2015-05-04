@@ -4,6 +4,8 @@
 Usage:
     forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
     forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
+    forseti.py list_configurations [<app>]
+    forseti.py cleanup_configurations [<app>] [--desired_configurations=<desired>]
     forseti.py maintenance <app> (on|off)
     forseti.py (-h | --help)
     forseti.py --version
@@ -12,6 +14,8 @@ Options:
     --ami=<ami-id>        AMI id to be used instead of creating a golden one.
     --daemon              Keep running and updating the status
     --activities=<amount> Number of latest activities to show
+    --desired_configurations=<desired> Number of launch configurations you
+                          want to leave when doing a cleanup [default: 4]
     --format=<format>     How to format the status.
                           Available values are: plain, json, tree (default)
     -h --help             Show this screen.
@@ -21,6 +25,7 @@ Options:
 
 import json
 from docopt import docopt
+from forseti import __version__ as forseti_version
 from forseti.configuration_reader import ForsetiConfiguration
 from forseti.deployers import (
     DeployAndSnapshotDeployer,
@@ -77,12 +82,44 @@ def main():
         daemon = arguments['--daemon']
         activities = arguments['--activities']
         reader.status(arguments['<app>'], daemon=daemon, activities=activities)
+    elif arguments['list_configurations']:
+        if arguments['<app>']:
+            applications = [arguments['<app>']]
+        else:
+            applications = configuration.applications.keys()
+
+        for application in applications:
+            print "Application: %s\n\n" % application
+            deployer = get_deployer(
+                configuration,
+                application
+            )
+            deployer.list_autoscale_configurations(application)
+    elif arguments['cleanup_configurations']:
+        if arguments['<app>']:
+            applications = [arguments['<app>']]
+        else:
+            applications = configuration.applications.keys()
+
+        for application in applications:
+            print "\nApplication: %s" % application
+            print "============="
+            deployer = get_deployer(
+                configuration,
+                application
+            )
+            deployer.cleanup_autoscale_configurations(
+                application,
+                int(arguments['--desired_configurations'])
+            )
     elif arguments['maintenance']:
         maintenance = MaintenanceCommand(configuration, arguments['<app>'])
         if arguments['on']:
             maintenance.on()
         else:
             maintenance.off()
+    elif arguments['--version']:
+        print "Forseti %s" % forseti_version
 
 
 if __name__ == '__main__':
