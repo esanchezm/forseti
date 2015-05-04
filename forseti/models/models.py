@@ -199,6 +199,34 @@ class GoldenEC2Instance(EC2Instance):
         balloon.finish()
 
 
+class EC2AMI(EC2):
+    """
+    EC2 AMI
+    """
+
+    def __init__(self, application, ami_id, configuration=None, resource=None):
+        super(EC2AMI, self).__init__(application, configuration, resource)
+        self.ami_id = ami_id
+
+    @property
+    def snapshot_id(self):
+        return self.resource.block_device_mapping.current_value.snapshot_id
+
+    def get_snapshot(self):
+        """
+        Get the snapshot associated to the AMI
+        """
+        snapshots = self.ec2.get_all_snapshots(snapshot_ids=[self.snapshot_id])
+
+        return snapshots[0] if snapshots else None
+
+    def delete(self):
+        """
+        Deletes the AMI and its associated snapshot
+        """
+        self.ec2.deregister_image(self.ami_id, delete_snapshot=True)
+
+
 class EC2AutoScaleConfig(EC2AutoScale):
     """
     EC2 autoscale config
