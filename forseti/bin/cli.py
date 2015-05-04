@@ -89,7 +89,8 @@ def main():
             applications = configuration.applications.keys()
 
         for application in applications:
-            print "Application: %s\n\n" % application
+            print "\nApplication: %s" % application
+            print "============="
             deployer = get_deployer(
                 configuration,
                 application
