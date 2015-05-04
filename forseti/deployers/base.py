@@ -34,6 +34,12 @@ class BaseDeployer(object):
 
         return config
 
+    def _get_autoscaling_group(self, application):
+        return EC2AutoScaleGroup(
+            self.autoscale_group_name,
+            application,
+        )
+
     def update_or_create_autoscale_group(self, application, autoscale_config):
         """
         Creates or updates an autoscale group `EC2AutoScaleGroup`
@@ -114,3 +120,38 @@ class BaseDeployer(object):
         balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
         print "Total deployment time: %02d:%02d" % (minutes, seconds)
+
+    def cleanup_autoscale_configurations(self, application, desired_configurations=4):
+        """
+        Clean up all launch configurations of the autoscaling group belonging
+        to the application but leaving `desired_configurations` left.
+
+        When a launch configuration is deleted, the AMI and snapshot will be
+        deleted too.
+        """
+        balloon = Balloon("")
+        self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
+        group = self._get_autoscaling_group(application)
+        configurations = group.get_all_launch_configurations()
+
+        # Get the first configurations minus the `desired_configurations`
+        configurations_to_be_deleted = configurations[:-desired_configurations]
+        for configuration in configurations_to_be_deleted:
+            print "Deleting launch configuration %s" % configuration.name
+            configuration.delete()
+
+        balloon.finish()
+
+    def list_autoscale_configurations(self, application):
+        """
+        List all the launch configurations of the autoscaling group belonging
+        to the application
+        """
+        self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
+        group = self._get_autoscaling_group(application)
+        configurations = group.get_all_launch_configurations()
+        for configuration in configurations:
+            ami = configuration.ami()
+            print "- %s " % configuration.name
+            print "\t- AMI: %s " % ami.ami_id
+            print "\t- Snapshot: %s " % ami.snapshot_id
