@@ -211,12 +211,18 @@ class EC2AMI(EC2):
 
     @property
     def snapshot_id(self):
-        return self.resource.block_device_mapping.current_value.snapshot_id
+        try:
+            return self.resource.block_device_mapping.current_value.snapshot_id
+        except AttributeError:
+            return None
 
     def get_snapshot(self):
         """
         Get the snapshot associated to the AMI
         """
+        if not self.snapshot_id:
+            return None
+
         snapshots = self.ec2.get_all_snapshots(snapshot_ids=[self.snapshot_id])
 
         return snapshots[0] if snapshots else None
