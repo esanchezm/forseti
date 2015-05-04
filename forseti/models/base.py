@@ -10,11 +10,11 @@ class EC2(object):
     EC2 base class
     """
 
-    def __init__(self, application, configuration=None):
+    def __init__(self, application, configuration=None, resource=None):
         self.ec2 = EC2Connection()
         self.configuration = configuration or {}
         self.application = application
-        self.resource = None
+        self.resource = resource
         self.today = datetime.today().strftime("%Y-%m-%d")
 
 
@@ -23,10 +23,14 @@ class EC2AutoScale(EC2):
     EC2 autoscale base class
     """
 
-    def __init__(self, name, application, configuration=None):
-        super(EC2AutoScale, self).__init__(application, configuration)
+    def __init__(self, name, application, configuration=None, resource=None):
+        super(EC2AutoScale, self).__init__(application, configuration, resource)
         self.autoscale = AutoScaleConnection()
-        self.name = "%s-%s" % (name, self.today)
+        self.name = name
+
+    @property
+    def generated_name(self):
+        return "%s-%s" % (self.name, self.today)
 
 
 class ELB(EC2):

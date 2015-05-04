@@ -213,7 +213,7 @@ class EC2AutoScaleConfig(EC2AutoScale):
         version = 1
         found = False
         while not found:
-            name = "%s-%s" % (self.name, version)
+            name = "%s-%s" % (self.generated_name, version)
             launch_configurations = self.autoscale.get_all_launch_configurations(names=[name])
             if launch_configurations:
                 version += 1
@@ -234,7 +234,6 @@ class EC2AutoScaleGroup(EC2AutoScale):
         super(EC2AutoScaleGroup, self).__init__(name, application, configuration)
         self.group = None
         self.elbs = []
-        self.name = name  # Do not add version to the name
 
     def set_launch_configuration(self, launch_configuration):
         """
