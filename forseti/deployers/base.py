@@ -153,5 +153,5 @@ class BaseDeployer(object):
         for configuration in configurations:
             ami = configuration.ami()
             print "- %s " % configuration.name
-            print "\t- AMI: %s " % ami.ami_id
-            print "\t- Snapshot: %s " % ami.snapshot_id
+            print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
+            print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
