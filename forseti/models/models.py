@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import time
 
 from forseti.models.base import (
@@ -543,6 +544,38 @@ class EC2AutoScaleGroup(EC2AutoScale):
             )
 
         return status
+
+    def get_all_launch_configurations(self):
+        """
+        Get all the launch configurations associated with the autoscaling
+        group of the application.
+
+        Please, notice that AWS provides no relation between autoscaling
+        configuration and group. What we're doing here is get all the
+        available configuration and return only the one which matches
+        a given regexp. This may cause false positives and return incorrect
+        launch configurations.
+        """
+        all_configurations = self.autoscale.get_all_launch_configurations()
+
+        # I have to do this because AWS don't let you tag launch configurations.
+        # Beware with false positives in case you have similar names
+        configurations_for_this_group = []
+        regex = r"^%s-\d{4}-\d{2}-\d{2}-\d+" % self.name
+        for resource in all_configurations:
+            # The configuration name starts with the group name and a dash
+            if re.findall(regex, resource.name):
+                launch_configuration = EC2AutoScaleConfig(
+                    resource.name,
+                    self.application,
+                    resource=resource
+                )
+
+                configurations_for_this_group.append(launch_configuration)
+
+        configurations_for_this_group.sort(cmp=lambda x, y: x.name < y.name)
+
+        return configurations_for_this_group
 
 
 class EC2AutoScalePolicy(EC2AutoScale):
