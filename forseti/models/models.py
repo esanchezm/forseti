@@ -580,21 +580,29 @@ class EC2AutoScaleGroup(EC2AutoScale):
         launch configurations.
         """
         all_configurations = self.autoscale.get_all_launch_configurations()
-
-        # I have to do this because AWS don't let you tag launch configurations.
-        # Beware with false positives in case you have similar names
         configurations_for_this_group = []
-        regex = r"^%s-\d{4}-\d{2}-\d{2}-\d+" % self.name
-        for resource in all_configurations:
-            # The configuration name starts with the group name and a dash
-            if re.findall(regex, resource.name):
-                launch_configuration = EC2AutoScaleConfig(
-                    resource.name,
-                    self.application,
-                    resource=resource
-                )
+        while True:
+            # I have to do this because AWS don't let you tag launch configurations.
+            # Beware with false positives in case you have similar names
+            regex = r"^%s-\d{4}-\d{2}-\d{2}-\d+" % self.name
+            for resource in all_configurations:
+                # The configuration name starts with the group name and a dash
+                print resource.name
+                if re.findall(regex, resource.name):
+                    launch_configuration = EC2AutoScaleConfig(
+                        resource.name,
+                        self.application,
+                        resource=resource
+                    )
 
-                configurations_for_this_group.append(launch_configuration)
+                    configurations_for_this_group.append(launch_configuration)
+
+            if all_configurations.next_token is None:
+                break
+
+            all_configurations = self.autoscale.get_all_launch_configurations(
+                next_token=all_configurations.next_token
+            )
 
         configurations_for_this_group.sort(cmp=lambda x, y: x.name < y.name)
 
