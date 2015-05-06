@@ -6,6 +6,7 @@ Usage:
     forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
     forseti.py list_configurations [<app>]
     forseti.py cleanup_configurations [<app>] [--desired_configurations=<desired>]
+    forseti.py regenerate <app>
     forseti.py maintenance <app> (on|off)
     forseti.py (-h | --help)
     forseti.py --version
@@ -113,6 +114,12 @@ def main():
                 application,
                 int(arguments['--desired_configurations'])
             )
+    elif arguments['regenerate']:
+        deployer = get_deployer(
+            configuration,
+            arguments['<app>']
+        )
+        deployer.regenerate(arguments['<app>'])
     elif arguments['maintenance']:
         maintenance = MaintenanceCommand(configuration, arguments['<app>'])
         if arguments['on']:
