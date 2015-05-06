@@ -130,6 +130,8 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         Generate the AMI to be used in the autoscale group.
         """
         group = self._get_group(application)
+        group.suspend_processes()
+
         instances = self._get_instances(application, group)
         # Select a random instance and create an AMI from it
         instance = None
