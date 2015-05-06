@@ -114,7 +114,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             raise exception
 
         if not ami_id:
-            ami_id = self.generate_ami()
+            ami_id = self.generate_ami(application)
 
         try:
             self.setup_autoscale(application, ami_id)
