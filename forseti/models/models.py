@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import time
 
 from forseti.models.base import (
@@ -199,6 +200,40 @@ class GoldenEC2Instance(EC2Instance):
         balloon.finish()
 
 
+class EC2AMI(EC2):
+    """
+    EC2 AMI
+    """
+
+    def __init__(self, application, ami_id, configuration=None, resource=None):
+        super(EC2AMI, self).__init__(application, configuration, resource)
+        self.ami_id = ami_id
+
+    @property
+    def snapshot_id(self):
+        try:
+            return self.resource.block_device_mapping.current_value.snapshot_id
+        except AttributeError:
+            return None
+
+    def get_snapshot(self):
+        """
+        Get the snapshot associated to the AMI
+        """
+        if not self.snapshot_id:
+            return None
+
+        snapshots = self.ec2.get_all_snapshots(snapshot_ids=[self.snapshot_id])
+
+        return snapshots[0] if snapshots else None
+
+    def delete(self):
+        """
+        Deletes the AMI and its associated snapshot
+        """
+        self.ec2.deregister_image(self.ami_id, delete_snapshot=True)
+
+
 class EC2AutoScaleConfig(EC2AutoScale):
     """
     EC2 autoscale config
@@ -213,7 +248,7 @@ class EC2AutoScaleConfig(EC2AutoScale):
         version = 1
         found = False
         while not found:
-            name = "%s-%s" % (self.name, version)
+            name = "%s-%s" % (self.generated_name, version)
             launch_configurations = self.autoscale.get_all_launch_configurations(names=[name])
             if launch_configurations:
                 version += 1
@@ -223,6 +258,23 @@ class EC2AutoScaleConfig(EC2AutoScale):
         self.name = name
         launch_configuration = LaunchConfiguration(name=self.name, **self.configuration)
         self.resource = self.autoscale.create_launch_configuration(launch_configuration)
+
+    def delete(self):
+        """
+        Deletes a launch configuration and its associated AMI
+        """
+        self.ami().delete()
+        self.autoscale.delete_launch_configuration(self.name)
+
+    def ami(self):
+        """
+        Get the AMI associated to the launch configuration
+        """
+        return EC2AMI(
+            self.application,
+            self.resource.image_id,
+            resource=self.ec2.get_image(image_id=self.resource.image_id)
+        )
 
 
 class EC2AutoScaleGroup(EC2AutoScale):
@@ -234,7 +286,6 @@ class EC2AutoScaleGroup(EC2AutoScale):
         super(EC2AutoScaleGroup, self).__init__(name, application, configuration)
         self.group = None
         self.elbs = []
-        self.name = name  # Do not add version to the name
 
     def set_launch_configuration(self, launch_configuration):
         """
@@ -516,6 +567,46 @@ class EC2AutoScaleGroup(EC2AutoScale):
             )
 
         return status
+
+    def get_all_launch_configurations(self):
+        """
+        Get all the launch configurations associated with the autoscaling
+        group of the application.
+
+        Please, notice that AWS provides no relation between autoscaling
+        configuration and group. What we're doing here is get all the
+        available configuration and return only the one which matches
+        a given regexp. This may cause false positives and return incorrect
+        launch configurations.
+        """
+        all_configurations = self.autoscale.get_all_launch_configurations()
+        configurations_for_this_group = []
+        while True:
+            # I have to do this because AWS don't let you tag launch configurations.
+            # Beware with false positives in case you have similar names
+            regex = r"^%s-\d{4}-\d{2}-\d{2}-\d+" % self.name
+            for resource in all_configurations:
+                # The configuration name starts with the group name and a dash
+                print resource.name
+                if re.findall(regex, resource.name):
+                    launch_configuration = EC2AutoScaleConfig(
+                        resource.name,
+                        self.application,
+                        resource=resource
+                    )
+
+                    configurations_for_this_group.append(launch_configuration)
+
+            if all_configurations.next_token is None:
+                break
+
+            all_configurations = self.autoscale.get_all_launch_configurations(
+                next_token=all_configurations.next_token
+            )
+
+        configurations_for_this_group.sort(cmp=lambda x, y: x.name < y.name)
+
+        return configurations_for_this_group
 
 
 class EC2AutoScalePolicy(EC2AutoScale):
