@@ -102,10 +102,20 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         an AMI from an.
         """
         balloon = Balloon("")
+
+        group = self._get_group(application)
+        # We must suspend autoscaling processes to avoid adding instances with
+        # outdated code
+        group.suspend_processes()
+        try:
+            self.deploy_instances_in_group(application, group)
+        except ForsetiException as exception:
+            group.resume_processes()
+            raise exception
+
         if not ami_id:
             ami_id = self.generate_ami()
 
-        group = self._get_group(application)
         try:
             self.setup_autoscale(application, ami_id)
         finally:
@@ -120,15 +130,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         Generate the AMI to be used in the autoscale group.
         """
         group = self._get_group(application)
-        # We must suspend autoscaling processes to avoid adding instances with
-        # outdated code
-        group.suspend_processes()
-        try:
-            instances = self.deploy_instances_in_group(application, group)
-        except ForsetiException as exception:
-            group.resume_processes()
-            raise exception
-
+        instances = self._get_instances(application, group)
         # Select a random instance and create an AMI from it
         instance = None
         try:
