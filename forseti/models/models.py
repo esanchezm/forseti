@@ -312,6 +312,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         Returns a list of `ELBBalancer` instances associated to the autoscale group
         """
+        self.group = self._get_autoscaling_group()
         if not self.group.load_balancers:
             return None
         if self.elbs:
