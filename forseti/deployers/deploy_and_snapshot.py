@@ -102,31 +102,19 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         an AMI from an.
         """
         balloon = Balloon("")
+
         group = self._get_group(application)
+        # We must suspend autoscaling processes to avoid adding instances with
+        # outdated code
+        group.suspend_processes()
+        try:
+            self.deploy_instances_in_group(application, group)
+        except ForsetiException as exception:
+            group.resume_processes()
+            raise exception
+
         if not ami_id:
-            # We must suspend autoscaling processes to avoid adding instances with
-            # outdated code
-            group.suspend_processes()
-            try:
-                instances = self.deploy_instances_in_group(application, group)
-            except ForsetiException as exception:
-                group.resume_processes()
-                raise exception
-
-            # Select a random instance and create an AMI from it
-            instance = None
-            try:
-                instance = self.choice_instance(instances)
-                group.deregister_instance_from_load_balancers([instance])
-                ami_id = instance.create_image(no_reboot=False)
-            except Exception as exception:
-                group.resume_processes()
-                raise exception
-            finally:
-                if instance:
-                    group.register_instance_in_load_balancers([instance], wait=False)
-
-            print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
+            ami_id = self.generate_ami(application)
 
         try:
             self.setup_autoscale(application, ami_id)
@@ -136,3 +124,28 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
         print "Total deployment time: %02d:%02d" % (minutes, seconds)
+
+    def generate_ami(self, application):
+        """
+        Generate the AMI to be used in the autoscale group.
+        """
+        group = self._get_group(application)
+        group.suspend_processes()
+
+        instances = self._get_instances(application, group)
+        # Select a random instance and create an AMI from it
+        instance = None
+        try:
+            instance = self.choice_instance(instances)
+            group.deregister_instance_from_load_balancers([instance])
+            ami_id = instance.create_image(no_reboot=False)
+        except Exception as exception:
+            group.resume_processes()
+            raise exception
+        finally:
+            if instance:
+                group.register_instance_in_load_balancers([instance], wait=False)
+
+        print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
+
+        return ami_id

@@ -27,6 +27,9 @@ class GoldenInstanceDeployer(BaseDeployer):
 
         return ami_id
 
+    def generate_ami(self, application):
+        return self.create_ami_from_golden_instance(application)
+
     def setup_autoscale(self, application, ami_id):
         """
         Creates or updates the autoscale group, launch configuration, autoscaling

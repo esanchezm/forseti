@@ -1,5 +1,6 @@
+import abc
+
 from forseti.models import (
-    GoldenEC2Instance,
     EC2AutoScaleGroup,
     EC2AutoScaleConfig,
     EC2AutoScalePolicy,
@@ -155,3 +156,21 @@ class BaseDeployer(object):
             print "- %s " % configuration.name
             print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
             print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
+
+    def regenerate(self, application):
+        """
+        Regenerate the autoscaling group of a given application.
+
+        Basically, it will create an AMI from one of the machines in the
+        group, creates a new launch configuration and setup the alarm and
+        policies again.
+        """
+        ami_id = self.generate_ami(application)
+        self.setup_autoscale(application, ami_id)
+
+    @abc.abstractmethod
+    def generate_ami(self, application):
+        """
+        Generate the AMI to be used in the autoscale group.
+        """
+        pass
