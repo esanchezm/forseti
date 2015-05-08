@@ -149,7 +149,8 @@ class BaseDeployer(object):
         List all the launch configurations of the autoscaling group belonging
         to the application
         """
-        self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
+        application_configuration = self.configuration.get_application_configuration(application)
+        self.autoscale_group_name = application_configuration['autoscale_group']
         group = self._get_autoscaling_group(application)
         configurations = group.get_all_launch_configurations()
         for configuration in configurations:
