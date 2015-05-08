@@ -21,6 +21,8 @@ class ForsetiConfiguration(object):
     AUTOSCALE_GROUP_KEY = 'autoscale_group'
     SCALING_POLICIES_KEY = 'scaling_policies'
     LOAD_BALANCER_KEY = 'elb'
+    DEPLOYMENT_STRATEGY = 'deployment_strategy'
+    SNS_ARN = 'sns_notification_arn'
 
     def __init__(self, forseti_configuration):
         super(ForsetiConfiguration, self).__init__()
