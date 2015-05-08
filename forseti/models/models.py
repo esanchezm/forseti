@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 import re
 import time
@@ -8,6 +9,7 @@ from forseti.models.base import (
     EC2,
     EC2AutoScale,
     ELB,
+    SNS,
 )
 from forseti.utils import Balloon
 from forseti.exceptions import EC2InstanceException
@@ -718,3 +720,37 @@ class ELBBalancer(ELB):
 
     def register_instances(self, instances):
         return self.balancer.register_instances(instances)
+
+
+class SNSMessageSender(SNS):
+    """
+    Class which represents a message sent to a SNS topic
+    """
+    def __init__(self, application, topic_arn, configuration=None, resource=None):
+        super(SNSMessageSender, self).__init__(application, configuration, resource)
+        self.topic_arn = topic_arn
+
+    def send(self, message, subject=None, message_attributes=None):
+        """
+        Send a message to a SNS topic
+        """
+        message_attributes = message_attributes or {}
+        message_attributes["Message"] = message
+
+        message = {
+            "default": json.dumps({
+                "Type": "Notification",
+                "Application": self.application,
+                # The message is a stringified JSON so we
+                # use json.dumps twice. This is intentional
+                # because AWS generated messages are sent this way too
+                "Message": json.dumps(message_attributes)
+            })
+        }
+
+        self.sns.publish(
+            subject=subject,
+            message=json.dumps(message),
+            message_structure='json',
+            topic=self.topic_arn
+        )
