@@ -4,7 +4,8 @@ from forseti.models import (
     EC2AutoScaleGroup,
     EC2AutoScaleConfig,
     EC2AutoScalePolicy,
-    CloudWatchMetricAlarm
+    CloudWatchMetricAlarm,
+    SNSMessageSender
 )
 from forseti.utils import Balloon
 
@@ -156,6 +157,19 @@ class BaseDeployer(object):
             print "- %s " % configuration.name
             print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
             print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
+
+    def send_sns_message(self, application, message, subject=None):
+        """
+        """
+        application_configuration = self.configuration.get_application_configuration(application)
+        if 'sns_notification_arn' not in application_configuration:
+            return
+
+        message = SNSMessageSender(
+            application,
+            application_configuration['sns_notification_arn']
+        )
+        message.send(message, subject=subject)
 
     def regenerate(self, application):
         """
