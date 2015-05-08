@@ -284,8 +284,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
     EC2 autoscale group
     """
 
-    def __init__(self, name, application, configuration=None):
-        super(EC2AutoScaleGroup, self).__init__(name, application, configuration)
+    def __init__(self, name, application, configuration=None, resource=None):
+        super(EC2AutoScaleGroup, self).__init__(name, application, configuration, resource)
         self.group = None
         self.elbs = []
 
