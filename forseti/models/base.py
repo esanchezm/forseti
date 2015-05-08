@@ -2,6 +2,7 @@ from datetime import datetime
 from boto.ec2.autoscale import AutoScaleConnection
 from boto.ec2.cloudwatch import CloudWatchConnection
 from boto.ec2.connection import EC2Connection
+from boto.sns.connection import SNSConnection
 from boto.ec2.elb import ELBConnection
 
 
@@ -61,3 +62,13 @@ class CloudWatch(AWS):
     def __init__(self, application, configuration=None, resource=None):
         super(CloudWatch, self).__init__(application, configuration, resource)
         self.cloudwatch = CloudWatchConnection()
+
+
+class SNS(AWS):
+    """
+    SNS base class
+    """
+
+    def __init__(self, application, configuration=None, resource=None):
+        super(SNS, self).__init__(application, configuration, resource)
+        self.sns = SNSConnection()
