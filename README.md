@@ -35,6 +35,9 @@ elb_region_endpoint = elasticloadbalancing.eu-west-1.amazonaws.com
 
 cloudwatch_region_name = eu-west-1
 cloudwatch_region_endpoint = monitoring.eu-west-1.amazonaws.com
+
+sns_region_name = eu-west-1
+sns_region_endpoint = sns.eu-west-1.amazonaws.com
 ```
 
 ### Forseti's configuration for deployment
