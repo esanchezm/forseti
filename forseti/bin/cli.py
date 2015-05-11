@@ -38,7 +38,7 @@ from forseti.readers import DefaultReader
 import os.path
 
 
-def get_deployer(configuration, application, extra_args=None):
+def get_deployer(application, configuration, extra_args=None):
     application_configuration = configuration.get_application_configuration(application)
     if configuration.DEPLOYMENT_STRATEGY not in application_configuration:
         raise ForsetiConfigurationException(
@@ -49,9 +49,9 @@ def get_deployer(configuration, application, extra_args=None):
     extra_args = extra_args or []
     extra_args = ' '.join(extra_args)
     if strategy == 'deploy_and_snapshot':
-        return DeployAndSnapshotDeployer(configuration, extra_args)
+        return DeployAndSnapshotDeployer(application, configuration, extra_args)
     if strategy == 'golden_instances':
-        return GoldenInstanceDeployer(configuration, extra_args)
+        return GoldenInstanceDeployer(application, configuration, extra_args)
 
     raise ForsetiConfigurationException(
         'Unknown deployment strategy \'%s\' in application configuration' % strategy
@@ -73,8 +73,8 @@ def main():
 
     if arguments['deploy']:
         deployer = get_deployer(
-            configuration,
             arguments['<app>'],
+            configuration,
             arguments['<args>']
         )
         deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
@@ -94,10 +94,10 @@ def main():
             print "\nApplication: %s" % application
             print "============="
             deployer = get_deployer(
+                application,
                 configuration,
-                application
             )
-            deployer.list_autoscale_configurations(application)
+            deployer.list_autoscale_configurations()
     elif arguments['cleanup_configurations']:
         if arguments['<app>']:
             applications = [arguments['<app>']]
@@ -108,17 +108,16 @@ def main():
             print "\nApplication: %s" % application
             print "============="
             deployer = get_deployer(
+                application,
                 configuration,
-                application
             )
             deployer.cleanup_autoscale_configurations(
-                application,
                 int(arguments['--desired_configurations'])
             )
     elif arguments['regenerate']:
         deployer = get_deployer(
+            arguments['<app>'],
             configuration,
-            arguments['<app>']
         )
         deployer.regenerate(arguments['<app>'])
     elif arguments['maintenance']:
