@@ -92,6 +92,10 @@ class BaseDeployer(object):
         :param application: Application name
         :param ami_id: AMI id used for the new autoscale system
         """
+        self.send_sns_message(
+            application,
+            "Setting up autoscale group for %s with AMI %s" % (application, ami_id)
+        )
         self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
 
         print "Creating autoscale config %s" % (self.autoscale_group_name)
