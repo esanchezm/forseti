@@ -170,11 +170,11 @@ class BaseDeployer(object):
         # If there's no subject, then the subject is the message
         subject = subject or message
 
-        message = SNSMessageSender(
+        sender = SNSMessageSender(
             application,
-            application_configuration['sns_notification_arn']
+            self.application_configuration['sns_notification_arn']
         )
-        message.send(message, subject=subject)
+        sender.send(message, subject=subject)
 
     def regenerate(self, application):
         """
