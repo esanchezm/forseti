@@ -20,7 +20,7 @@ from boto.ec2.autoscale import (
     ScalingPolicy,
     Tag,
 )
-from boto.exception import BotoServerError
+from boto.exception import BotoServerError, EC2ResponseError
 from boto.ec2.cloudwatch import MetricAlarm
 import paramiko
 
@@ -265,7 +265,11 @@ class EC2AutoScaleConfig(EC2AutoScale):
         """
         Deletes a launch configuration and its associated AMI
         """
-        self.ami().delete()
+        try:
+            self.ami().delete()
+        except EC2ResponseError as e:
+            print "The AMI %s could not be deleted" % self.resource.image_id
+
         self.autoscale.delete_launch_configuration(self.name)
 
     def ami(self):
