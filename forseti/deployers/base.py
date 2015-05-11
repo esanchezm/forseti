@@ -4,7 +4,8 @@ from forseti.models import (
     EC2AutoScaleGroup,
     EC2AutoScaleConfig,
     EC2AutoScalePolicy,
-    CloudWatchMetricAlarm
+    CloudWatchMetricAlarm,
+    SNSMessageSender
 )
 from forseti.utils import Balloon
 
@@ -91,6 +92,10 @@ class BaseDeployer(object):
         :param application: Application name
         :param ami_id: AMI id used for the new autoscale system
         """
+        self.send_sns_message(
+            application,
+            "Setting up autoscale group for %s with AMI %s" % (application, ami_id)
+        )
         self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
 
         print "Creating autoscale config %s" % (self.autoscale_group_name)
@@ -148,7 +153,8 @@ class BaseDeployer(object):
         List all the launch configurations of the autoscaling group belonging
         to the application
         """
-        self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
+        application_configuration = self.configuration.get_application_configuration(application)
+        self.autoscale_group_name = application_configuration['autoscale_group']
         group = self._get_autoscaling_group(application)
         configurations = group.get_all_launch_configurations()
         for configuration in configurations:
@@ -156,6 +162,22 @@ class BaseDeployer(object):
             print "- %s " % configuration.name
             print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
             print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
+
+    def send_sns_message(self, application, message, subject=None):
+        """
+        """
+        application_configuration = self.configuration.get_application_configuration(application)
+        if 'sns_notification_arn' not in application_configuration:
+            return
+
+        # If there's no subject, then the subject is the message
+        subject = subject or message
+
+        message = SNSMessageSender(
+            application,
+            application_configuration['sns_notification_arn']
+        )
+        message.send(message, subject=subject)
 
     def regenerate(self, application):
         """

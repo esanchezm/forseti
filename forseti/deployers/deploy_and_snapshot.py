@@ -101,6 +101,10 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         Do the code deployment by pushing the code in all instances and create
         an AMI from an.
         """
+        self.send_sns_message(
+            application,
+            "Starting deployment of %s" % application
+        )
         balloon = Balloon("")
 
         group = self._get_group(application)
@@ -125,10 +129,20 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
         print "Total deployment time: %02d:%02d" % (minutes, seconds)
 
+        self.send_sns_message(
+            application,
+            "Finished deployment of %s in %02d:%02d" % \
+            (application, minutes, seconds)
+        )
+
     def generate_ami(self, application):
         """
         Generate the AMI to be used in the autoscale group.
         """
+        self.send_sns_message(
+            application,
+            "Generating an AMI for %s" % application
+        )
         group = self._get_group(application)
         group.suspend_processes()
 
@@ -147,5 +161,10 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 group.register_instance_in_load_balancers([instance], wait=False)
 
         print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
+
+        self.send_sns_message(
+            application,
+            "Finished AMI generation for %s. AMI id: %s" % (application, ami_id)
+        )
 
         return ami_id

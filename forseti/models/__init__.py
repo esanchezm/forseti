@@ -6,4 +6,5 @@ from forseti.models.models import (
     EC2AutoScalePolicy,
     CloudWatchMetricAlarm,
     ELBBalancer,
+    SNSMessageSender,
 )

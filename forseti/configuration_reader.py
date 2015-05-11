@@ -21,6 +21,8 @@ class ForsetiConfiguration(object):
     AUTOSCALE_GROUP_KEY = 'autoscale_group'
     SCALING_POLICIES_KEY = 'scaling_policies'
     LOAD_BALANCER_KEY = 'elb'
+    DEPLOYMENT_STRATEGY = 'deployment_strategy'
+    SNS_ARN = 'sns_notification_arn'
 
     def __init__(self, forseti_configuration):
         super(ForsetiConfiguration, self).__init__()
@@ -111,7 +113,7 @@ class ForsetiConfiguration(object):
         is a dictionary. Raises a `ForsetiConfigurationException` if any of
         the conditions are not met.
         """
-        if not key in configuration:
+        if key not in configuration:
             raise ForsetiConfigurationException("%s key not found" % key)
 
         value = configuration[key]
@@ -125,7 +127,7 @@ class ForsetiConfiguration(object):
         Get the `application` configuration dictionary.
         Raises `ForsetiConfigurationException` if `application` is unknown.
         """
-        if not application in self.application_names:
+        if application not in self.application_names:
             raise ForsetiConfigurationException(
                 "Application `%s` not found" % application
             )
@@ -140,7 +142,7 @@ class ForsetiConfiguration(object):
         Raises `ForsetiConfigurationException` if `application` is unknown.
         """
         application_configuration = self.get_application_configuration(application)
-        if not self.AUTOSCALE_GROUP_KEY in application_configuration:
+        if self.AUTOSCALE_GROUP_KEY not in application_configuration:
             raise ForsetiConfigurationException(
                 "Application `%s` configuration does not have `%s` key" % (application, self.AUTOSCALE_GROUP_KEY)
             )
@@ -156,7 +158,7 @@ class ForsetiConfiguration(object):
         it has no `SCALING_POLICIES_KEY` defined.
         """
         application_configuration = self.get_application_configuration(application)
-        if not self.SCALING_POLICIES_KEY in application_configuration:
+        if self.SCALING_POLICIES_KEY not in application_configuration:
             raise ForsetiConfigurationException(
                 "Application `%s` configuration does not have `%s` key" % (application, self.SCALING_POLICIES_KEY)
             )
@@ -170,7 +172,7 @@ class ForsetiConfiguration(object):
         it has no `GOLD_KEY` defined.
         """
         application_configuration = self.get_application_configuration(application)
-        if not self.GOLD_KEY in application_configuration:
+        if self.GOLD_KEY not in application_configuration:
             raise ForsetiConfigurationException(
                 "Application `%s` configuration does not have `%s` key" % (application, self.GOLD_KEY)
             )
@@ -184,13 +186,13 @@ class ForsetiConfiguration(object):
         it has no `AUTOSCALE_GROUP_KEY` defined.
         """
         application_configuration = self.get_application_configuration(application)
-        if not self.AUTOSCALE_GROUP_KEY in application_configuration:
+        if self.AUTOSCALE_GROUP_KEY not in application_configuration:
             raise ForsetiConfigurationException(
                 "Application `%s` configuration does not have `%s` key" % (application, self.AUTOSCALE_GROUP_KEY)
             )
 
         group = application_configuration[self.AUTOSCALE_GROUP_KEY]
-        if not group in self.launch_configuration_names:
+        if group not in self.launch_configuration_names:
             raise ForsetiConfigurationException("Autoscale group `%s` configuration not found" % group)
 
         return self.autoscale_groups[group]
@@ -203,13 +205,13 @@ class ForsetiConfiguration(object):
         Raises `ForsetiConfigurationException` if `application` is unknown or
         it has no `AUTOSCALE_GROUP_KEY` defined.
         """
-        if not self.AUTOSCALE_GROUP_KEY in self.applications[application]:
+        if self.AUTOSCALE_GROUP_KEY not in self.applications[application]:
             raise ForsetiConfigurationException(
                 "Application %s configuration does not have %s key" % (application, self.AUTOSCALE_GROUP_KEY)
             )
 
         group = self.applications[application][self.AUTOSCALE_GROUP_KEY]
-        if not group in self.launch_configuration_names:
+        if group not in self.launch_configuration_names:
             raise ForsetiConfigurationException("Launch configuration `%s` configuration not found" % group)
 
         return self.launch_configurations[group]
@@ -219,7 +221,7 @@ class ForsetiConfiguration(object):
         Get the `policy` configuration dictionary.
         Raises `ForsetiConfigurationException` if `policy` is unknown.
         """
-        if not policy in self.policy_names:
+        if policy not in self.policy_names:
             raise ForsetiConfigurationException(
                 "Policy %s not found" % policy
             )

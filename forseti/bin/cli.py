@@ -40,11 +40,12 @@ import os.path
 
 def get_deployer(configuration, application, extra_args=None):
     application_configuration = configuration.get_application_configuration(application)
-    if 'deployment_strategy' not in application_configuration:
+    if configuration.DEPLOYMENT_STRATEGY not in application_configuration:
         raise ForsetiConfigurationException(
-            'Missing `deployment_strategy` in application configuration'
+            'Missing %s in application configuration' %
+            configuration.DEPLOYMENT_STRATEGY
         )
-    strategy = application_configuration['deployment_strategy']
+    strategy = application_configuration[configuration.DEPLOYMENT_STRATEGY]
     extra_args = extra_args or []
     extra_args = ' '.join(extra_args)
     if strategy == 'deploy_and_snapshot':
