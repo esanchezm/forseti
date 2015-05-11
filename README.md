@@ -71,3 +71,7 @@ Once your file is configured, you can deploy your new application code with the 
 ```
 forseti deploy application_name
 ```
+
+## License
+
+Forseti is licensed under BSD license. See [LICENSE](LICENSE) for more information.
