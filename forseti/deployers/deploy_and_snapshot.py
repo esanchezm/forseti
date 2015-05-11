@@ -101,7 +101,6 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         an AMI from an.
         """
         self.send_sns_message(
-            application,
             "Starting deployment of %s" % application
         )
 
@@ -128,7 +127,6 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         print "Total deployment time: %02d:%02d" % (minutes, seconds)
 
         self.send_sns_message(
-            application,
             "Finished deployment of %s in %02d:%02d" % \
             (application, minutes, seconds)
         )
@@ -138,7 +136,6 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         Generate the AMI to be used in the autoscale group.
         """
         self.send_sns_message(
-            self.application,
             "Generating an AMI for %s" % self.application
         )
         group = self._get_group(self.application)
@@ -161,7 +158,6 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
 
         self.send_sns_message(
-            self.application,
             "Finished AMI generation for %s. AMI id: %s" % (self.application, ami_id)
         )
 

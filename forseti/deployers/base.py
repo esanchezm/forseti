@@ -106,7 +106,6 @@ class BaseDeployer(object):
         :param ami_id: AMI id used for the new autoscale system
         """
         self.send_sns_message(
-            self.application,
             "Setting up autoscale group for %s with AMI %s" %
             (self.application, ami_id)
         )
@@ -157,9 +156,7 @@ class BaseDeployer(object):
             configurations_to_be_deleted = configurations[:-desired_configurations]
             for configuration in configurations_to_be_deleted:
                 self.send_sns_message(
-                    self.application,
-                    "Deleting launch configuration %s" %
-                    configuration.name
+                    "Deleting launch configuration %s" % configuration.name
                 )
                 print "Deleting launch configuration %s" % configuration.name
                 configuration.delete()
