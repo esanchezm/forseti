@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Forseti is a tool to manage AWS autoscaling groups by using golden AMIs.
+"""Forseti is a tool to manage AWS autoscaling groups.
 
 Usage:
     forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
