@@ -13,7 +13,7 @@ class MaintenanceCommand(object):
         )
 
     def _running_instances_dns_names(self):
-        autoscale_group_name = self.configuration.get_autoscale_group('frontend')
+        autoscale_group_name = self.configuration.get_autoscale_group(self.application)
         autoscale_group = EC2AutoScaleGroup(autoscale_group_name, self.application)
         return autoscale_group.get_instances_dns_names_with_status('running')
 

@@ -16,8 +16,8 @@ from forseti.utils import balloon_timer
 class DeployAndSnapshotDeployer(BaseDeployer):
     """Deployer for ticketea's infrastructure"""
 
-    def __init__(self, configuration, command_args=None):
-        super(DeployAndSnapshotDeployer, self).__init__(configuration, command_args)
+    def __init__(self, application, configuration, command_args=None):
+        super(DeployAndSnapshotDeployer, self).__init__(application, configuration, command_args)
         self.group = None
 
     def _get_group(self, application):
@@ -117,7 +117,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 raise exception
 
             if not ami_id:
-                ami_id = self.generate_ami(application)
+                ami_id = self.generate_ami()
 
             try:
                 self.setup_autoscale(application, ami_id)
@@ -133,18 +133,18 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             (application, minutes, seconds)
         )
 
-    def generate_ami(self, application):
+    def generate_ami(self):
         """
         Generate the AMI to be used in the autoscale group.
         """
         self.send_sns_message(
-            application,
-            "Generating an AMI for %s" % application
+            self.application,
+            "Generating an AMI for %s" % self.application
         )
-        group = self._get_group(application)
+        group = self._get_group(self.application)
         group.suspend_processes()
 
-        instances = self._get_instances(application, group)
+        instances = self._get_instances(self.application, group)
         # Select a random instance and create an AMI from it
         instance = None
         try:
@@ -161,8 +161,8 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
 
         self.send_sns_message(
-            application,
-            "Finished AMI generation for %s. AMI id: %s" % (application, ami_id)
+            self.application,
+            "Finished AMI generation for %s. AMI id: %s" % (self.application, ami_id)
         )
 
         return ami_id

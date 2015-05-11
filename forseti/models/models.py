@@ -228,7 +228,12 @@ class EC2AMI(EC2):
         """
         Deletes the AMI and its associated snapshot
         """
-        self.ec2.deregister_image(self.ami_id, delete_snapshot=True)
+        try:
+            self.ec2.deregister_image(self.ami_id, delete_snapshot=True)
+        except AttributeError:
+            # Try to deregister the AMI without deleting the snapshot if it
+            # fails
+            self.ec2.deregister_image(self.ami_id, delete_snapshot=False)
 
 
 class EC2AutoScaleConfig(EC2AutoScale):
