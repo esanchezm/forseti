@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import json
 from pprint import pformat
 import progressbar
@@ -17,6 +18,25 @@ class Balloon(progressbar.ProgressBar):
         ]
         super(Balloon, self).__init__(widgets=widgets, maxval=600, **kwargs)
         self.start()
+
+
+@contextmanager
+def balloon_timer(message, **kwargs):
+    """
+    Context manager which yields a `Balloon` object.
+
+    The balloon object yielded must be updated from outside so the progress bar
+    keeps working:
+
+    ```
+    with balloon_timer("Testing") as baloon:
+        time_elapsed = do_something()
+        baloon.update(time_elapsed)
+    ```
+    """
+    balloon = Balloon(message, **kwargs)
+    yield balloon
+    balloon.finish()
 
 
 class DefaultFormatter():
