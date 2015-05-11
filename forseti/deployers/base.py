@@ -161,7 +161,6 @@ class BaseDeployer(object):
                     "Deleting launch configuration %s" %
                     configuration.name
                 )
-                import ipdb;ipdb.set_trace()
                 print "Deleting launch configuration %s" % configuration.name
                 configuration.delete()
 
