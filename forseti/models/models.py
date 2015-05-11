@@ -194,7 +194,7 @@ class GoldenEC2Instance(EC2Instance):
             former_directory = os.getcwd()
             os.chdir(self.provision_configuration['working_directory'])
             os.system(command)
-            os.chdir(former_directory))
+            os.chdir(former_directory)
 
 
 class EC2AMI(EC2):
@@ -579,7 +579,6 @@ class EC2AutoScaleGroup(EC2AutoScale):
             regex = r"^%s-\d{4}-\d{2}-\d{2}-\d+" % self.name
             for resource in all_configurations:
                 # The configuration name starts with the group name and a dash
-                print resource.name
                 if re.findall(regex, resource.name):
                     launch_configuration = EC2AutoScaleConfig(
                         resource.name,
