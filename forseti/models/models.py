@@ -11,7 +11,7 @@ from forseti.models.base import (
     ELB,
     SNS,
 )
-from forseti.utils import Balloon
+from forseti.utils import balloon_timer
 from forseti.exceptions import EC2InstanceException
 
 from boto.ec2.autoscale import (
@@ -69,29 +69,31 @@ class EC2Instance(EC2):
         """
         Create an AMI from a running instance
         """
-        balloon = Balloon("Instance %s creating image" % self.instance.id)
-        i = 0
+        with balloon_timer("Instance %s creating image" % self.instance.id) as balloon:
+            i = 0
 
-        amis = self.ec2.get_all_images(
-            owners=['self'],
-            filters={
-                'tag:forseti:application': self.application,
-                'tag:forseti:date': self.today,
-            }
-        )
-        ami_name = "%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
-        ami_id = self.instance.create_image(ami_name, description=ami_name, no_reboot=no_reboot)
-        balloon.update(i)
-        i += 1
-        time.sleep(1)
-        ami = self.ec2.get_all_images(image_ids=(ami_id,))[0]
-
-        while ami.update() == "pending":
+            amis = self.ec2.get_all_images(
+                owners=['self'],
+                filters={
+                    'tag:forseti:application': self.application,
+                    'tag:forseti:date': self.today,
+                }
+            )
+            ami_name = "%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
+            ami_id = self.instance.create_image(
+                ami_name,
+                description=ami_name,
+                no_reboot=no_reboot
+            )
             balloon.update(i)
             i += 1
             time.sleep(1)
+            ami = self.ec2.get_all_images(image_ids=(ami_id,))[0]
 
-        balloon.finish()
+            while ami.update() == "pending":
+                balloon.update(i)
+                i += 1
+                time.sleep(1)
 
         if ami.update() == "available":
             ami.add_tag("Name", ami_name)
@@ -134,15 +136,12 @@ class GoldenEC2Instance(EC2Instance):
         Launch a golden instance and wait until it's running.
         """
         self.launch()
-        balloon = Balloon("Golden instance %s launched. Waiting until it's running" % self.instance.id)
-
-        i = 0
-        while self.instance.update() == "pending":
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-
-        balloon.finish()
+        with balloon_timer("Golden instance %s launched. Waiting until it's running" % self.instance.id) as balloon:
+            i = 0
+            while self.instance.update() == "pending":
+                balloon.update(i)
+                i += 1
+                time.sleep(1)
 
         if self.instance.update() == "running":
             tag_name = "golden-%s-instance-%s" % (self.application, self.today)
@@ -168,15 +167,12 @@ class GoldenEC2Instance(EC2Instance):
         """
         Wait until SSH is running
         """
-        balloon = Balloon("Golden instance %s provisioned. Waiting until SSH is up" % self.instance.id)
-
-        i = 0
-        while not self.is_ssh_running():
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-
-        balloon.finish()
+        with balloon_timer("Golden instance %s provisioned. Waiting until SSH is up" % self.instance.id) as balloon:
+            i = 0
+            while not self.is_ssh_running():
+                balloon.update(i)
+                i += 1
+                time.sleep(1)
 
     def provision(self, deployer_args=None):
         """
@@ -187,19 +183,18 @@ class GoldenEC2Instance(EC2Instance):
         using `deployer_args`
         """
         self.wait_for_ssh()
-        balloon = Balloon("Deployed new code on golden instance %s" % self.instance.id)
-        command = self.provision_configuration['command'].format(
-            dns_name=self.instance.public_dns_name
-        )
-        if deployer_args:
-            # `deployer_args` is supposed to be a string
-            command = '%s %s' % (command, deployer_args)
+        with balloon_timer("Deployed new code on golden instance %s" % self.instance.id) as balloon:
+            command = self.provision_configuration['command'].format(
+                dns_name=self.instance.public_dns_name
+            )
+            if deployer_args:
+                # `deployer_args` is supposed to be a string
+                command = '%s %s' % (command, deployer_args)
 
-        former_directory = os.getcwd()
-        os.chdir(self.provision_configuration['working_directory'])
-        os.system(command)
-        os.chdir(former_directory)
-        balloon.finish()
+            former_directory = os.getcwd()
+            os.chdir(self.provision_configuration['working_directory'])
+            os.system(command)
+            os.chdir(former_directory))
 
 
 class EC2AMI(EC2):
@@ -363,23 +358,21 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
         Current policy: "Las gallinas que entran por las que salen"
         """
-        balloon = Balloon("Increasing desired capacity to provision new machines")
+        with balloon_timer("Increasing desired capacity to provision new machines") as balloon:
 
-        current_instances = self.get_instances_with_status('running')
-        self.old_instances = current_instances
+            current_instances = self.get_instances_with_status('running')
+            self.old_instances = current_instances
 
-        desired = len(current_instances) * 2
-        i = 0
-        while self.group.desired_capacity != desired:
-            self.group.desired_capacity = desired
-            self.group.max_size = self.group.max_size * 2
-            self.group.update()
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-            self.group = self._get_autoscaling_group()
-
-        balloon.finish()
+            desired = len(current_instances) * 2
+            i = 0
+            while self.group.desired_capacity != desired:
+                self.group.desired_capacity = desired
+                self.group.max_size = self.group.max_size * 2
+                self.group.update()
+                balloon.update(i)
+                i += 1
+                time.sleep(1)
+                self.group = self._get_autoscaling_group()
 
     def suspend_processes(self, scaling_processes=None):
         """
@@ -425,14 +418,12 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         Wait for instances launched by autoscale group to be up, running and in the balancer
         """
-        balloon = Balloon("Waiting for new instances until they're up and running")
-        i = 0
-        while len(self.get_instances_with_status('running')) != self.group.desired_capacity:
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-
-        balloon.finish()
+        with balloon_timer("Waiting for new instances until they're up and running") as balloon:
+            i = 0
+            while len(self.get_instances_with_status('running')) != self.group.desired_capacity:
+                balloon.update(i)
+                i += 1
+                time.sleep(1)
 
         # TODO: Query AWS for instances
         instances = self.get_instances_with_status('running')
@@ -443,11 +434,10 @@ class EC2AutoScaleGroup(EC2AutoScale):
             balancer.wait_for_instances_with_health(new_instances)
 
         # We do it twice, because sometimes the balancer health check is a bit tricky.
-        balloon = Balloon("Waiting for another balancer health check pass")
-        for i in range(1, self.load_balancers()[0].get_health_check_interval()):
-            balloon.update(i)
-            time.sleep(1)
-        balloon.finish()
+        with balloon_timer("Waiting for another balancer health check pass") as balloon:
+            for i in range(1, self.load_balancers()[0].get_health_check_interval()):
+                balloon.update(i)
+                time.sleep(1)
 
         for balancer in self.load_balancers():
             balancer.wait_for_instances_with_health(new_instances)
@@ -456,13 +446,12 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         Terminate instances that we no longer want in the autoscale group, the old ones
         """
-        balloon = Balloon("Terminating old instances")
-        for instance_id in instances_ids:
-            try:
-                self.autoscale.terminate_instance(instance_id, decrement_capacity=True)
-            except BotoServerError:
-                pass
-        balloon.finish()
+        with balloon_timer("Terminating old instances") as balloon:
+            for instance_id in instances_ids:
+                try:
+                    self.autoscale.terminate_instance(instance_id, decrement_capacity=True)
+                except BotoServerError:
+                    pass
 
         # Force an updated group instance to be sure the update is done correctly
         self.group = self._get_autoscaling_group()
@@ -698,19 +687,16 @@ class ELBBalancer(ELB):
         return instances
 
     def wait_for_instances_with_health(self, instances_ids, health='InService'):
-        balloon = Balloon("Waiting for %d instances until they're in the balancer %s with status %s" % (
+        with balloon_timer("Waiting for %d instances until they're in the balancer %s with status %s" % (
             len(instances_ids),
             self.balancer.name,
             health
-        ))
-
-        i = 0
-        while len(self.filter_instances_with_health(instances_ids, health=health)) != len(instances_ids):
-            balloon.update(i)
-            i += 1
-            time.sleep(1)
-
-        balloon.finish()
+        )) as balloon:
+            i = 0
+            while len(self.filter_instances_with_health(instances_ids, health=health)) != len(instances_ids):
+                balloon.update(i)
+                i += 1
+                time.sleep(1)
 
     def get_health_check_interval(self):
         return self.balancer.health_check.interval

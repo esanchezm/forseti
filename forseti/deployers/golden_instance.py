@@ -1,6 +1,6 @@
 from forseti.deployers.base import BaseDeployer
 from forseti.models import GoldenEC2Instance
-from forseti.utils import Balloon
+from forseti.utils import balloon_timer
 
 
 class GoldenInstanceDeployer(BaseDeployer):
@@ -49,12 +49,11 @@ class GoldenInstanceDeployer(BaseDeployer):
         Do the code deployment in a golden instance and setup an autoscale group
         with an AMI created from it.
         """
-        balloon = Balloon("")
-        if not ami_id:
-            ami_id = self.create_ami_from_golden_instance(application)
-            print "New AMI %s from golden instance" % ami_id
-        self.setup_autoscale(application, ami_id)
+        with balloon_timer("") as balloon:
+            if not ami_id:
+                ami_id = self.create_ami_from_golden_instance(application)
+                print "New AMI %s from golden instance" % ami_id
+            self.setup_autoscale(application, ami_id)
 
-        balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
         print "Total deployment time: %02d:%02d" % (minutes, seconds)

@@ -7,7 +7,7 @@ from forseti.models import (
     CloudWatchMetricAlarm,
     SNSMessageSender
 )
-from forseti.utils import Balloon
+from forseti.utils import balloon_timer
 
 
 class BaseDeployer(object):
@@ -120,10 +120,9 @@ class BaseDeployer(object):
         """
         Do the deployment of an AMI.
         """
-        balloon = Balloon("")
-        self.setup_autoscale(application, ami_id)
+        with balloon_timer("") as balloon:
+            self.setup_autoscale(application, ami_id)
 
-        balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
         print "Total deployment time: %02d:%02d" % (minutes, seconds)
 
@@ -135,18 +134,16 @@ class BaseDeployer(object):
         When a launch configuration is deleted, the AMI and snapshot will be
         deleted too.
         """
-        balloon = Balloon("")
-        self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
-        group = self._get_autoscaling_group(application)
-        configurations = group.get_all_launch_configurations()
+        with balloon_timer(""):
+            self.autoscale_group_name = self.configuration.get_application_configuration(application)['autoscale_group']
+            group = self._get_autoscaling_group(application)
+            configurations = group.get_all_launch_configurations()
 
-        # Get the first configurations minus the `desired_configurations`
-        configurations_to_be_deleted = configurations[:-desired_configurations]
-        for configuration in configurations_to_be_deleted:
-            print "Deleting launch configuration %s" % configuration.name
-            configuration.delete()
-
-        balloon.finish()
+            # Get the first configurations minus the `desired_configurations`
+            configurations_to_be_deleted = configurations[:-desired_configurations]
+            for configuration in configurations_to_be_deleted:
+                print "Deleting launch configuration %s" % configuration.name
+                configuration.delete()
 
     def list_autoscale_configurations(self, application):
         """
