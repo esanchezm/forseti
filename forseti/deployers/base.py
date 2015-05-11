@@ -166,6 +166,9 @@ class BaseDeployer(object):
         if 'sns_notification_arn' not in application_configuration:
             return
 
+        # If there's no subject, then the subject is the message
+        subject = subject or message
+
         message = SNSMessageSender(
             application,
             application_configuration['sns_notification_arn']
