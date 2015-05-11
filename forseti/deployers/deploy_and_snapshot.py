@@ -10,7 +10,7 @@ from forseti.models import (
     EC2Instance,
 )
 from forseti.deployers.base import BaseDeployer
-from forseti.utils import Balloon
+from forseti.utils import balloon_timer
 
 
 class DeployAndSnapshotDeployer(BaseDeployer):
@@ -52,24 +52,23 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 'This deployer needs to have some instances running in the group'
             )
 
-        balloon = Balloon("Deploying new code on instances")
-        deploy_configuration = self.configuration.get_application_configuration(application)['deploy']
-        command = deploy_configuration['command'].format(
-            dns_name=','.join([instance.instance.public_dns_name for instance in instances])
-        )
-        if self.command_args:
-            command = '%s %s' % (command, self.command_args)
 
-        former_directory = os.getcwd()
-        os.chdir(deploy_configuration['working_directory'])
-        retvalue = os.system(command)
-        if retvalue != 0:
-            raise ForsetiDeployException(
-                'Deployment command did not return 0 as expected, returned: %s' % retvalue
+        with balloon_timer("Deploying new code on instances") as balloon:
+            deploy_configuration = self.configuration.get_application_configuration(application)['deploy']
+            command = deploy_configuration['command'].format(
+                dns_name=','.join([instance.instance.public_dns_name for instance in instances])
             )
-        os.chdir(former_directory)
+            if self.command_args:
+                command = '%s %s' % (command, self.command_args)
 
-        balloon.finish()
+            former_directory = os.getcwd()
+            os.chdir(deploy_configuration['working_directory'])
+            retvalue = os.system(command)
+            if retvalue != 0:
+                raise ForsetiDeployException(
+                    'Deployment command did not return 0 as expected, returned: %s' % retvalue
+                )
+            os.chdir(former_directory)
 
         return instances
 
@@ -105,27 +104,26 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             application,
             "Starting deployment of %s" % application
         )
-        balloon = Balloon("")
 
-        group = self._get_group(application)
-        # We must suspend autoscaling processes to avoid adding instances with
-        # outdated code
-        group.suspend_processes()
-        try:
-            self.deploy_instances_in_group(application, group)
-        except ForsetiException as exception:
-            group.resume_processes()
-            raise exception
+        with balloon_timer("") as balloon:
+            group = self._get_group(application)
+            # We must suspend autoscaling processes to avoid adding instances with
+            # outdated code
+            group.suspend_processes()
+            try:
+                self.deploy_instances_in_group(application, group)
+            except ForsetiException as exception:
+                group.resume_processes()
+                raise exception
 
-        if not ami_id:
-            ami_id = self.generate_ami(application)
+            if not ami_id:
+                ami_id = self.generate_ami(application)
 
-        try:
-            self.setup_autoscale(application, ami_id)
-        finally:
-            group.resume_processes()
+            try:
+                self.setup_autoscale(application, ami_id)
+            finally:
+                group.resume_processes()
 
-        balloon.finish()
         minutes, seconds = divmod(int(balloon.seconds_elapsed), 60)
         print "Total deployment time: %02d:%02d" % (minutes, seconds)
 
