@@ -20,41 +20,44 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         super(DeployAndSnapshotDeployer, self).__init__(application, configuration, command_args)
         self.group = None
 
-    def _get_group(self, application):
+    def _get_group(self):
         group = EC2AutoScaleGroup(
-            self.configuration.get_autoscale_group(application),
-            application,
-            self.configuration.get_autoscale_group_configuration(application)
+            self.configuration.get_autoscale_group(self.application),
+            self.application,
+            self.configuration.get_autoscale_group_configuration(self.application)
         )
 
         return group
 
-    def _get_instances(self, application, group):
+    def _get_instances(self, group):
         running_instances = group.get_instances_with_status('running')
         if not running_instances:
             return None
 
         instances = []
         for instance_id in running_instances:
-            instance = EC2Instance(application, configuration=None, instance_id=instance_id)
+            instance = EC2Instance(
+                self.application,
+                configuration=None,
+                instance_id=instance_id
+            )
             instances.append(instance)
 
         return instances
 
-    def deploy_instances_in_group(self, application, group):
+    def deploy_instances_in_group(self, group):
         """
         Deploy conde into the instances of the autoscale group. This is done
         by executing `command` from `deploy` configuration in `working_directory`.
         """
-        instances = self._get_instances(application, group)
+        instances = self._get_instances(group)
         if not instances:
             raise ForsetiException(
                 'This deployer needs to have some instances running in the group'
             )
 
-
         with balloon_timer("Deploying new code on instances") as balloon:
-            deploy_configuration = self.configuration.get_application_configuration(application)['deploy']
+            deploy_configuration = self.configuration.get_application_configuration(self.application)['deploy']
             command = deploy_configuration['command'].format(
                 dns_name=','.join([instance.instance.public_dns_name for instance in instances])
             )
@@ -95,22 +98,22 @@ class DeployAndSnapshotDeployer(BaseDeployer):
 
         return instance
 
-    def deploy(self, application, ami_id=None):
+    def deploy(self, ami_id=None):
         """
         Do the code deployment by pushing the code in all instances and create
         an AMI from an.
         """
         self.send_sns_message(
-            "Starting deployment of %s" % application
+            "Starting deployment of %s" % self.application
         )
 
         with balloon_timer("") as balloon:
-            group = self._get_group(application)
+            group = self._get_group()
             # We must suspend autoscaling processes to avoid adding instances with
             # outdated code
             group.suspend_processes()
             try:
-                self.deploy_instances_in_group(application, group)
+                self.deploy_instances_in_group(group)
             except ForsetiException as exception:
                 group.resume_processes()
                 raise exception
@@ -119,7 +122,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 ami_id = self.generate_ami()
 
             try:
-                self.setup_autoscale(application, ami_id)
+                self.setup_autoscale(ami_id)
             finally:
                 group.resume_processes()
 
@@ -128,7 +131,7 @@ class DeployAndSnapshotDeployer(BaseDeployer):
 
         self.send_sns_message(
             "Finished deployment of %s in %02d:%02d" % \
-            (application, minutes, seconds)
+            (self.application, minutes, seconds)
         )
 
     def generate_ami(self):
