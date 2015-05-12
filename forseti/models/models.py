@@ -729,17 +729,16 @@ class SNSMessageSender(SNS):
         Send a message to a SNS topic
         """
         message_attributes = message_attributes or {}
-        message_attributes["Message"] = message
-
-        message = {
-            "default": json.dumps({
+        message_attributes.update(
+            {
                 "Type": "Notification",
                 "Application": self.application,
-                # The message is a stringified JSON so we
-                # use json.dumps twice. This is intentional
-                # because AWS generated messages are sent this way too
-                "Message": json.dumps(message_attributes)
-            })
+                "Message": message
+            }
+        )
+
+        message = {
+            "default": json.dumps(message_attributes)
         }
 
         self.sns.publish(
