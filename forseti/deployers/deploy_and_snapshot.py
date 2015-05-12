@@ -141,10 +141,10 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         self.send_sns_message(
             "Generating an AMI for %s" % self.application
         )
-        group = self._get_group(self.application)
+        group = self._get_group()
         group.suspend_processes()
 
-        instances = self._get_instances(self.application, group)
+        instances = self._get_instances(group)
         # Select a random instance and create an AMI from it
         instance = None
         try:
