@@ -77,7 +77,7 @@ def main():
             configuration,
             arguments['<args>']
         )
-        deployer.deploy(arguments['<app>'], ami_id=arguments['--ami'])
+        deployer.deploy(arguments['--ami'])
     elif arguments['status']:
         format = arguments['--format']
         reader = DefaultReader(configuration, format=format)
