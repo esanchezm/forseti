@@ -124,7 +124,7 @@ class BaseDeployer(object):
         print "Created autoscale policies"
 
         print "Creating metric alarms which will trigger autoscaling"
-        self.update_or_create_metric_alarms()
+        self.update_or_create_metric_alarms(group)
         print "Created metric alarms"
 
         return group
