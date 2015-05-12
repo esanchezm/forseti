@@ -109,16 +109,15 @@ class DeployAndSnapshotDeployer(BaseDeployer):
 
         with balloon_timer("") as balloon:
             group = self._get_group()
-            # We must suspend autoscaling processes to avoid adding instances with
-            # outdated code
-            group.suspend_processes()
-            try:
-                self.deploy_instances_in_group(group)
-            except ForsetiException as exception:
-                group.resume_processes()
-                raise exception
-
             if not ami_id:
+                # We must suspend autoscaling processes to avoid adding instances with
+                # outdated code
+                group.suspend_processes()
+                try:
+                    self.deploy_instances_in_group(group)
+                except ForsetiException as exception:
+                    group.resume_processes()
+                    raise exception
                 ami_id = self.generate_ami()
 
             try:
