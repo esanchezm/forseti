@@ -119,7 +119,7 @@ def main():
             arguments['<app>'],
             configuration,
         )
-        deployer.regenerate(arguments['<app>'])
+        deployer.regenerate()
     elif arguments['maintenance']:
         maintenance = MaintenanceCommand(configuration, arguments['<app>'])
         if arguments['on']:
