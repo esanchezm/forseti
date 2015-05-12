@@ -175,7 +175,7 @@ class BaseDeployer(object):
             print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
             print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
 
-    def send_sns_message(self, message, subject=None):
+    def send_sns_message(self, message, subject=None, extra_attributes=None):
         """
         """
         if 'sns_notification_arn' not in self.application_configuration:
@@ -188,7 +188,14 @@ class BaseDeployer(object):
             self.application,
             self.application_configuration['sns_notification_arn']
         )
-        sender.send(message, subject=subject)
+
+        extra_attributes = extra_attributes or {}
+        if 'sns_extra_attributes' in self.application_configuration:
+            extra_attributes.update(
+                self.application_configuration['sns_extra_attributes']
+            )
+
+        sender.send(message, subject, extra_attributes)
 
     def regenerate(self):
         """
