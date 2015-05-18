@@ -70,14 +70,31 @@ class EC2Instance(EC2):
     EC2 Instance
     """
 
-    def __init__(self, application, configuration=None, instance_id=None):
-        super(EC2Instance, self).__init__(application, configuration)
+    def __init__(self, application, configuration=None, resource=None, instance_id=None):
+        super(EC2Instance, self).__init__(application, configuration, resource)
         self.instance_id = instance_id
         if self.instance_id:
             self.resource = self.ec2.get_all_instances(instance_ids=[self.instance_id])[0]
             self.instance = self.resource.instances[0]
         else:
             self.instance = None
+
+    def load_balancers(self):
+        """
+        Get all the balancers for the instance.
+        """
+        if not self.instance_id:
+            return []
+
+        load_balancers = []
+        all_load_balancers = ELB.get_all_load_balancers()
+
+        for load_balancer in all_load_balancers:
+            instances = [instance.id for instance in load_balancer.instances]
+            if self.instance_id in instances:
+                load_balancers.append(load_balancer)
+
+        return load_balancers
 
     def launch(self):
         """
@@ -143,6 +160,22 @@ class EC2Instance(EC2):
             raise EC2InstanceException("Image %s could not be created" % self.instance.id)
 
         return ami_id
+
+    def attributes(self):
+        """
+        Get the most importants attributes of the instance.
+        """
+        return {
+            "instance_type": self.instance.instance_type,
+            "key_name": self.instance.key_name,
+            "instance_monitoring": self.instance.monitored,
+            "security_groups": [g.name for g in self.instance.groups],
+            "kernel_id": self.instance.kernel,
+            "ramdisk_id": self.instance.ramdisk,
+            "ebs_optimized": self.instance.ebs_optimized,
+            "availability_zone": self.instance.placement,
+            "load_balancers": [elb.name for elb in self.load_balancers()]
+        }
 
 
 class GoldenEC2Instance(EC2Instance):
