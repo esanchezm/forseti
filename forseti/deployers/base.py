@@ -217,3 +217,10 @@ class BaseDeployer(object):
         Generate the AMI to be used in the autoscale group.
         """
         pass
+
+    @abc.abstractmethod
+    def init(self, instance_id, no_reboot=False):
+        """
+        Initialize an application and autoscale group
+        """
+        pass
