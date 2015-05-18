@@ -53,6 +53,19 @@ class ELB(AWS):
         self.elb = ELBConnection()
         self.name = name
 
+    @staticmethod
+    def get_all_load_balancers():
+        connection = ELBConnection()
+        all_load_balancers = []
+        load_balancers = connection.get_all_load_balancers()
+        all_load_balancers.extend(load_balancers)
+
+        while load_balancers.is_truncated:
+            load_balancers = connection.get_all_load_balancers()
+            all_load_balancers.extend(load_balancers)
+
+        return all_load_balancers
+
 
 class CloudWatch(AWS):
     """
