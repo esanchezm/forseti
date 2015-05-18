@@ -12,7 +12,10 @@ from forseti.models.base import (
     SNS,
 )
 from forseti.utils import balloon_timer
-from forseti.exceptions import EC2InstanceException
+from forseti.exceptions import (
+    EC2InstanceException,
+    ForsetiConfigurationException
+)
 
 from boto.ec2.autoscale import (
     AutoScalingGroup,
@@ -23,6 +26,43 @@ from boto.ec2.autoscale import (
 from boto.exception import BotoServerError, EC2ResponseError
 from boto.ec2.cloudwatch import MetricAlarm
 import paramiko
+
+
+class Application(object):
+    """
+    Forseti application
+    """
+    def __init__(self, name, forseti_configuration):
+        super(Application, self).__init__()
+        self.name = name
+        self.forseti_configuration = forseti_configuration
+
+    @property
+    def autoscale_group(self):
+        try:
+            return EC2AutoScaleGroup(
+                self.forseti_configuration.get_autoscale_group(self.name),
+                self.name,
+                self.forseti_configuration.get_autoscale_group_configuration(self.name)
+            )
+        except ForsetiConfigurationException:
+            return None
+
+    @property
+    def scaling_policies(self):
+        try:
+            policies = self.forseti_configuration.get_scaling_policies(self.name)
+            for policy_name in policies:
+                policy = EC2AutoScalePolicy(
+                    policy_name,
+                    self.autoscale_group,
+                    self.name,
+                    self.forseti_configuration.get_policy_configuration(policy_name)
+                )
+                policy.update_or_create()
+                self.policies[policy_name] = policy
+        except ForsetiConfigurationException:
+            return None
 
 
 class EC2Instance(EC2):
