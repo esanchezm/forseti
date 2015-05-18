@@ -27,7 +27,7 @@ Options:
 import json
 from docopt import docopt
 from forseti import __version__ as forseti_version
-from forseti.configuration_reader import ForsetiConfiguration
+from forseti.configuration import ForsetiConfiguration
 from forseti.deployers import (
     DeployAndSnapshotDeployer,
     GoldenInstanceDeployer,
@@ -48,6 +48,16 @@ def get_deployer(application, configuration, extra_args=None):
     strategy = application_configuration[configuration.DEPLOYMENT_STRATEGY]
     extra_args = extra_args or []
     extra_args = ' '.join(extra_args)
+
+    return get_deployer_from_strategy(
+        strategy,
+        application,
+        configuration,
+        extra_args=None
+    )
+
+
+def get_deployer_from_strategy(strategy, application, configuration, extra_args=None):
     if strategy == 'deploy_and_snapshot':
         return DeployAndSnapshotDeployer(application, configuration, extra_args)
     if strategy == 'golden_instances':
