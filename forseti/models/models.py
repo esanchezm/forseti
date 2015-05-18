@@ -628,7 +628,7 @@ class EC2AutoScalePolicy(EC2AutoScale):
 
     def update_or_create(self):
         """
-        Creates the scalinig policy in AWS and stores in `self.reource` a `boto.ec2.autoscale.policy.ScalingPolicy`
+        Creates the scaling policy in AWS and stores in `self.reource` a `boto.ec2.autoscale.policy.ScalingPolicy`
         """
         policy = ScalingPolicy(name=self.name, **self.configuration)
         self.autoscale.create_scaling_policy(policy)

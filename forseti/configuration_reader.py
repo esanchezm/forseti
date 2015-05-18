@@ -53,7 +53,10 @@ class ForsetiConfiguration(object):
         `application_names` properties. Raises `ForsetiConfigurationException`
         in case some error is found.
         """
-        self.applications = self._get_key_in_configuration(self.forseti_configuration, self.APPLICATIONS_KEY)
+        self.applications = self._get_key_in_configuration(
+            self.forseti_configuration,
+            self.APPLICATIONS_KEY
+        )
         self.application_names = self.applications.keys()
 
     def _parse_autoscale_configuration(self):
@@ -63,7 +66,10 @@ class ForsetiConfiguration(object):
         `policies`, `policy_names`, `alarms` and `alarm_names` properties.
         Raises `ForsetiConfigurationException` in case some error is found.
         """
-        autoscale = self._get_key_in_configuration(self.forseti_configuration, self.AUTOSCALE_KEY)
+        autoscale = self._get_key_in_configuration(
+            self.forseti_configuration,
+            self.AUTOSCALE_KEY
+        )
 
         self._parse_autoscale_groups(autoscale)
         self._parse_autoscale_launch_configurations(autoscale)
@@ -76,7 +82,10 @@ class ForsetiConfiguration(object):
         and `autoscale_group_names` properties. Raises `ForsetiConfigurationException`
         in case some error is found.
         """
-        self.autoscale_groups = self._get_key_in_configuration(autoscale, self.GROUPS_KEY)
+        self.autoscale_groups = self._get_key_in_configuration(
+            autoscale,
+            self.GROUPS_KEY
+        )
         self.autoscale_group_names = self.autoscale_groups.keys()
 
     def _parse_autoscale_launch_configurations(self, autoscale):
@@ -85,7 +94,10 @@ class ForsetiConfiguration(object):
         and `launch_configuration_names` properties. Raises `ForsetiConfigurationException`
         in case some error is found.
         """
-        self.launch_configurations = self._get_key_in_configuration(autoscale, self.CONFIGS_KEY)
+        self.launch_configurations = self._get_key_in_configuration(
+            autoscale,
+            self.CONFIGS_KEY
+        )
         self.launch_configuration_names = self.launch_configurations.keys()
 
     def _parse_autoscale_policies(self, autoscale):
@@ -95,7 +107,10 @@ class ForsetiConfiguration(object):
         is found.
         """
 
-        self.policies = self._get_key_in_configuration(autoscale, self.POLICIES_KEY)
+        self.policies = self._get_key_in_configuration(
+            autoscale,
+            self.POLICIES_KEY
+        )
         self.policy_names = self.policies.keys()
 
     def _parse_autoscale_alamrs(self, autoscale):
@@ -144,7 +159,8 @@ class ForsetiConfiguration(object):
         application_configuration = self.get_application_configuration(application)
         if self.AUTOSCALE_GROUP_KEY not in application_configuration:
             raise ForsetiConfigurationException(
-                "Application `%s` configuration does not have `%s` key" % (application, self.AUTOSCALE_GROUP_KEY)
+                "Application `%s` configuration does not have `%s` key" %
+                (application, self.AUTOSCALE_GROUP_KEY)
             )
 
         return application_configuration[self.AUTOSCALE_GROUP_KEY]
@@ -160,7 +176,8 @@ class ForsetiConfiguration(object):
         application_configuration = self.get_application_configuration(application)
         if self.SCALING_POLICIES_KEY not in application_configuration:
             raise ForsetiConfigurationException(
-                "Application `%s` configuration does not have `%s` key" % (application, self.SCALING_POLICIES_KEY)
+                "Application `%s` configuration does not have `%s` key" %
+                (application, self.SCALING_POLICIES_KEY)
             )
 
         return application_configuration[self.SCALING_POLICIES_KEY]
@@ -174,7 +191,8 @@ class ForsetiConfiguration(object):
         application_configuration = self.get_application_configuration(application)
         if self.GOLD_KEY not in application_configuration:
             raise ForsetiConfigurationException(
-                "Application `%s` configuration does not have `%s` key" % (application, self.GOLD_KEY)
+                "Application `%s` configuration does not have `%s` key" %
+                (application, self.GOLD_KEY)
             )
 
         return application_configuration[self.GOLD_KEY]
@@ -188,12 +206,15 @@ class ForsetiConfiguration(object):
         application_configuration = self.get_application_configuration(application)
         if self.AUTOSCALE_GROUP_KEY not in application_configuration:
             raise ForsetiConfigurationException(
-                "Application `%s` configuration does not have `%s` key" % (application, self.AUTOSCALE_GROUP_KEY)
+                "Application `%s` configuration does not have `%s` key" %
+                (application, self.AUTOSCALE_GROUP_KEY)
             )
 
         group = application_configuration[self.AUTOSCALE_GROUP_KEY]
         if group not in self.launch_configuration_names:
-            raise ForsetiConfigurationException("Autoscale group `%s` configuration not found" % group)
+            raise ForsetiConfigurationException(
+                "Autoscale group `%s` configuration not found" % group
+            )
 
         return self.autoscale_groups[group]
 
@@ -207,12 +228,15 @@ class ForsetiConfiguration(object):
         """
         if self.AUTOSCALE_GROUP_KEY not in self.applications[application]:
             raise ForsetiConfigurationException(
-                "Application %s configuration does not have %s key" % (application, self.AUTOSCALE_GROUP_KEY)
+                "Application %s configuration does not have %s key" %
+                (application, self.AUTOSCALE_GROUP_KEY)
             )
 
         group = self.applications[application][self.AUTOSCALE_GROUP_KEY]
         if group not in self.launch_configuration_names:
-            raise ForsetiConfigurationException("Launch configuration `%s` configuration not found" % group)
+            raise ForsetiConfigurationException(
+                "Launch configuration `%s` configuration not found" % group
+            )
 
         return self.launch_configurations[group]
 
