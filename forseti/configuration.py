@@ -143,9 +143,7 @@ class ForsetiConfiguration(object):
         Raises `ForsetiConfigurationException` if `application` is unknown.
         """
         if application not in self.application_names:
-            raise ForsetiConfigurationException(
-                "Application `%s` not found" % application
-            )
+            return {}
 
         return self.applications[application]
 
