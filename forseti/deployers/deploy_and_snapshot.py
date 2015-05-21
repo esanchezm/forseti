@@ -16,6 +16,8 @@ from forseti.utils import balloon_timer
 class DeployAndSnapshotDeployer(BaseDeployer):
     """Deployer for ticketea's infrastructure"""
 
+    name = "deploy_and_snapshot"
+
     def __init__(self, application, configuration, command_args=None):
         super(DeployAndSnapshotDeployer, self).__init__(application, configuration, command_args)
         self.group = None
