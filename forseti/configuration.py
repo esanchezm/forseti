@@ -1,6 +1,8 @@
 """
 Forseti configuration
 """
+import json
+
 from forseti.exceptions import ForsetiConfigurationException
 
 
@@ -273,3 +275,17 @@ class ForsetiConfiguration(object):
             launch_configuration
         )
         self.application_names.append(application_name)
+
+    def dump(self, pretty=False):
+        """
+        Dumps the configuration into a JSON
+        """
+        kwargs = {}
+        if pretty:
+            kwargs = {
+                'sort_keys': True,
+                'indent': 4,
+                'separators': (',', ': '),
+            }
+
+        return json.dumps(self.forseti_configuration, **kwargs)
