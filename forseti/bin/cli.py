@@ -2,6 +2,7 @@
 """Forseti is a tool to manage AWS autoscaling groups.
 
 Usage:
+    forseti.py init <app> <instance-id> --deployer=deploy_and_snapshot|golden_instances [--no-reboot-instance]
     forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
     forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
     forseti.py list_configurations [<app>]
@@ -151,6 +152,19 @@ def main():
             maintenance.on()
         else:
             maintenance.off()
+    elif arguments['init']:
+        deployer = get_deployer_from_strategy(
+            arguments['--deployer'],
+            arguments['<app>'],
+            configuration
+        )
+
+        deployer.init_application(
+            arguments['<instance-id>'],
+            arguments['--no-reboot-instance']
+        )
+
+        write_configuration_file(configuration)
     elif arguments['--version']:
         print "Forseti %s" % forseti_version
 
