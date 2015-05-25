@@ -157,7 +157,10 @@ class EC2Instance(EC2):
             ami.add_tag('forseti:application', self.application)
             ami.add_tag('forseti:date', self.today)
         else:
-            raise EC2InstanceException("Image %s could not be created" % self.instance.id)
+            raise EC2InstanceException(
+                "Image %s could not be created. Reason: %s"
+                % (ami.id, ami.message)
+            )
 
         return ami_id
 
