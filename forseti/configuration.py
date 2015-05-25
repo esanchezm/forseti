@@ -1,6 +1,8 @@
 """
 Forseti configuration
 """
+import json
+
 from forseti.exceptions import ForsetiConfigurationException
 
 
@@ -143,9 +145,7 @@ class ForsetiConfiguration(object):
         Raises `ForsetiConfigurationException` if `application` is unknown.
         """
         if application not in self.application_names:
-            raise ForsetiConfigurationException(
-                "Application `%s` not found" % application
-            )
+            return {}
 
         return self.applications[application]
 
@@ -251,3 +251,43 @@ class ForsetiConfiguration(object):
             )
 
         return self.policies[policy]
+
+    def add_application(
+        self,
+        application_name,
+        application_configuration,
+        group_configuration,
+        launch_configuration
+    ):
+        if application_name not in application_configuration.keys():
+            raise ForsetiConfigurationException(
+                ("Incorrect application name provided. The application_name",
+                 "given is not present in the application_configuration")
+            )
+
+        self.forseti_configuration[self.APPLICATIONS_KEY].update(
+            application_configuration
+        )
+        self.forseti_configuration[self.AUTOSCALE_KEY][self.GROUPS_KEY].update(
+            group_configuration
+        )
+        self.forseti_configuration[self.AUTOSCALE_KEY][self.CONFIGS_KEY].update(
+            launch_configuration
+        )
+        self.application_names.append(application_name)
+        self.autoscale_group_names.extend(group_configuration.keys())
+        self.launch_configuration_names.extend(launch_configuration.keys())
+
+    def dump(self, pretty=False):
+        """
+        Dumps the configuration into a JSON
+        """
+        kwargs = {}
+        if pretty:
+            kwargs = {
+                'sort_keys': True,
+                'indent': 4,
+                'separators': (',', ': '),
+            }
+
+        return json.dumps(self.forseti_configuration, **kwargs)

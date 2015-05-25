@@ -16,12 +16,15 @@ class BaseDeployer(object):
     def __init__(self, application, configuration, command_args=None):
         self.application = application
         self.configuration = configuration
-        self.application_configuration = configuration.get_application_configuration(application)
         self.gold_instance = None
         self.policies = {}
         self.alarms = {}
         self.autoscale_group_name = None
         self.command_args = command_args or ''
+
+    @property
+    def application_configuration(self):
+        return self.configuration.get_application_configuration(self.application)
 
     def create_autoscale_configuration(self, ami_id):
         """
@@ -212,5 +215,12 @@ class BaseDeployer(object):
     def generate_ami(self):
         """
         Generate the AMI to be used in the autoscale group.
+        """
+        pass
+
+    @abc.abstractmethod
+    def init_application(self, instance_id, no_reboot=False):
+        """
+        Initialize an application and autoscale group
         """
         pass

@@ -6,6 +6,8 @@ from forseti.utils import balloon_timer
 class GoldenInstanceDeployer(BaseDeployer):
     """Deployer for ticketea's infrastructure"""
 
+    name = "golden_instances"
+
     def __init__(self, application, configuration, command_args=None):
         super(GoldenInstanceDeployer, self).__init__(application, configuration, command_args)
         self.gold_instance = None

@@ -16,6 +16,8 @@ from forseti.utils import balloon_timer
 class DeployAndSnapshotDeployer(BaseDeployer):
     """Deployer for ticketea's infrastructure"""
 
+    name = "deploy_and_snapshot"
+
     def __init__(self, application, configuration, command_args=None):
         super(DeployAndSnapshotDeployer, self).__init__(application, configuration, command_args)
         self.group = None
@@ -164,3 +166,79 @@ class DeployAndSnapshotDeployer(BaseDeployer):
         )
 
         return ami_id
+
+    def init_application(self, instance_id, no_reboot=False):
+        """
+        Initialize an application and autoscale group using an existing instance
+        from AWS.
+        """
+        self.send_sns_message(
+            "Setting up a new application %s" % self.application
+        )
+
+        instance = EC2Instance(
+            self.application,
+            configuration=None,
+            instance_id=instance_id
+        )
+        instance_attributes = instance.attributes()
+        self.configuration.add_application(
+            self.application,
+            self._build_application_configuration(),
+            self._build_autoscale_group_configuration(instance_attributes),
+            self._build_autoscale_launch_configuration(instance_attributes),
+        )
+
+        self.send_sns_message(
+            "Generating an AMI for %s" % self.application
+        )
+        ami_id = instance.create_image(no_reboot=no_reboot)
+        print "New AMI %s from instance %s" % (ami_id, instance.instance_id)
+
+        self.send_sns_message(
+            "Finished AMI generation for %s. AMI id: %s" % (self.application, ami_id)
+        )
+
+        self.setup_autoscale(ami_id)
+
+    def _build_application_configuration(self):
+        return {
+            self.application: {
+                "autoscale_group": self.application.upper(),
+                "scaling_policies": [],
+                "deployment_strategy": self.name,
+                "deploy": {
+                    "working_directory": os.getcwd(),
+                    "command": "<add your deployment command here>",
+                }
+            }
+        }
+
+    def _build_autoscale_group_configuration(self, instance_attributes):
+        return {
+            self.application.upper(): {
+                "availability_zones": [instance_attributes['availability_zone']],
+                "max_size": 3,
+                "min_size": 1,
+                "load_balancers": instance_attributes['load_balancers'],
+                "termination_policies": [
+                    "ClosestToNextInstanceHour",
+                    "OldestInstance"
+                ],
+                "health_check_period": 60,
+                "health_check_type": "ELB" if instance_attributes['load_balancers'] else "EC2"
+            }
+        }
+
+    def _build_autoscale_launch_configuration(self, instance_attributes):
+        return {
+            self.application.upper(): {
+                "security_groups": instance_attributes['security_groups'],
+                "instance_type": instance_attributes['instance_type'],
+                "key_name": instance_attributes['key_name'],
+                "instance_monitoring": instance_attributes['instance_monitoring'],
+                "kernel_id": instance_attributes['kernel_id'],
+                "ramdisk_id": instance_attributes['ramdisk_id'],
+                "ebs_optimized": instance_attributes['ebs_optimized'],
+            }
+        }

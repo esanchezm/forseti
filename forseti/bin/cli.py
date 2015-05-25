@@ -2,6 +2,7 @@
 """Forseti is a tool to manage AWS autoscaling groups.
 
 Usage:
+    forseti.py init <app> <instance-id> --deployer=deploy_and_snapshot|golden_instances [--no-reboot-instance]
     forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
     forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
     forseti.py list_configurations [<app>]
@@ -27,7 +28,7 @@ Options:
 import json
 from docopt import docopt
 from forseti import __version__ as forseti_version
-from forseti.configuration_reader import ForsetiConfiguration
+from forseti.configuration import ForsetiConfiguration
 from forseti.deployers import (
     DeployAndSnapshotDeployer,
     GoldenInstanceDeployer,
@@ -48,6 +49,16 @@ def get_deployer(application, configuration, extra_args=None):
     strategy = application_configuration[configuration.DEPLOYMENT_STRATEGY]
     extra_args = extra_args or []
     extra_args = ' '.join(extra_args)
+
+    return get_deployer_from_strategy(
+        strategy,
+        application,
+        configuration,
+        extra_args=None
+    )
+
+
+def get_deployer_from_strategy(strategy, application, configuration, extra_args=None):
     if strategy == 'deploy_and_snapshot':
         return DeployAndSnapshotDeployer(application, configuration, extra_args)
     if strategy == 'golden_instances':
@@ -58,18 +69,33 @@ def get_deployer(application, configuration, extra_args=None):
     )
 
 
-def main():
-    arguments = docopt(__doc__)
+def get_configuration_file_path():
+    return os.path.abspath(os.path.expanduser('~/.forseti/config.json'))
 
-    config_path = os.path.abspath(os.path.expanduser('~/.forseti/config.json'))
+
+def read_configuration_file():
+    config_path = get_configuration_file_path()
     if not os.path.exists(config_path):
         raise ValueError("Configuration file does not exist at %r" % config_path)
 
     try:
-        configuration = ForsetiConfiguration(json.load(open(config_path)))
+        return ForsetiConfiguration(json.load(open(config_path)))
     except ValueError as exception:
         print "Invalid JSON configuration file %s\n" % config_path
         raise exception
+
+
+def write_configuration_file(forseti_configuration):
+    config_path = get_configuration_file_path()
+
+    with open(config_path, 'w') as config_file:
+        config_file.write(forseti_configuration.dump(pretty=True))
+
+
+def main():
+    arguments = docopt(__doc__)
+
+    configuration = read_configuration_file()
 
     if arguments['deploy']:
         deployer = get_deployer(
@@ -126,6 +152,19 @@ def main():
             maintenance.on()
         else:
             maintenance.off()
+    elif arguments['init']:
+        deployer = get_deployer_from_strategy(
+            arguments['--deployer'],
+            arguments['<app>'],
+            configuration
+        )
+
+        deployer.init_application(
+            arguments['<instance-id>'],
+            arguments['--no-reboot-instance']
+        )
+
+        write_configuration_file(configuration)
     elif arguments['--version']:
         print "Forseti %s" % forseti_version
 

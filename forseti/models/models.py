@@ -12,7 +12,10 @@ from forseti.models.base import (
     SNS,
 )
 from forseti.utils import balloon_timer
-from forseti.exceptions import EC2InstanceException
+from forseti.exceptions import (
+    EC2InstanceException,
+    ForsetiConfigurationException
+)
 
 from boto.ec2.autoscale import (
     AutoScalingGroup,
@@ -25,19 +28,73 @@ from boto.ec2.cloudwatch import MetricAlarm
 import paramiko
 
 
+class Application(object):
+    """
+    Forseti application
+    """
+    def __init__(self, name, forseti_configuration):
+        super(Application, self).__init__()
+        self.name = name
+        self.forseti_configuration = forseti_configuration
+
+    @property
+    def autoscale_group(self):
+        try:
+            return EC2AutoScaleGroup(
+                self.forseti_configuration.get_autoscale_group(self.name),
+                self.name,
+                self.forseti_configuration.get_autoscale_group_configuration(self.name)
+            )
+        except ForsetiConfigurationException:
+            return None
+
+    @property
+    def scaling_policies(self):
+        try:
+            policies = self.forseti_configuration.get_scaling_policies(self.name)
+            for policy_name in policies:
+                policy = EC2AutoScalePolicy(
+                    policy_name,
+                    self.autoscale_group,
+                    self.name,
+                    self.forseti_configuration.get_policy_configuration(policy_name)
+                )
+                policy.update_or_create()
+                self.policies[policy_name] = policy
+        except ForsetiConfigurationException:
+            return None
+
+
 class EC2Instance(EC2):
     """
     EC2 Instance
     """
 
-    def __init__(self, application, configuration=None, instance_id=None):
-        super(EC2Instance, self).__init__(application, configuration)
+    def __init__(self, application, configuration=None, resource=None, instance_id=None):
+        super(EC2Instance, self).__init__(application, configuration, resource)
         self.instance_id = instance_id
         if self.instance_id:
             self.resource = self.ec2.get_all_instances(instance_ids=[self.instance_id])[0]
             self.instance = self.resource.instances[0]
         else:
             self.instance = None
+
+    def load_balancers(self):
+        """
+        Get all the balancers for the instance.
+        """
+        if not self.instance_id:
+            return []
+
+        load_balancers = []
+        all_load_balancers = ELB.get_all_load_balancers()
+
+        for load_balancer in all_load_balancers:
+            instances = [instance.id for instance in load_balancer.instances]
+            if self.instance_id in instances:
+                load_balancers.append(load_balancer)
+
+        return load_balancers
 
     def launch(self):
         """
@@ -100,9 +157,28 @@ class EC2Instance(EC2):
             ami.add_tag('forseti:application', self.application)
             ami.add_tag('forseti:date', self.today)
         else:
-            raise EC2InstanceException("Image %s could not be created" % self.instance.id)
+            raise EC2InstanceException(
+                "Image %s could not be created. Reason: %s"
+                % (ami.id, ami.message)
+            )
 
         return ami_id
+
+    def attributes(self):
+        """
+        Get the most importants attributes of the instance.
+        """
+        return {
+            "instance_type": self.instance.instance_type,
+            "key_name": self.instance.key_name,
+            "instance_monitoring": self.instance.monitored,
+            "security_groups": [g.name for g in self.instance.groups],
+            "kernel_id": self.instance.kernel,
+            "ramdisk_id": self.instance.ramdisk,
+            "ebs_optimized": self.instance.ebs_optimized,
+            "availability_zone": self.instance.placement,
+            "load_balancers": [elb.name for elb in self.load_balancers()]
+        }
 
 
 class GoldenEC2Instance(EC2Instance):
@@ -518,7 +594,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
             self.group.max_size = self.configuration['max_size']
             self.group.min_size = self.configuration['min_size']
             self.group.load_balancers = self.configuration['load_balancers']
-            self.group.default_cooldown = self.configuration['default_cooldown']
+            self.group.default_cooldown = self.configuration.get('default_cooldown', None)
             self.group.termination_policies = self.configuration['termination_policies']
             self.group.update()
             self.group = self._get_autoscaling_group()
@@ -651,7 +727,7 @@ class CloudWatchMetricAlarm(CloudWatch):
         super(CloudWatchMetricAlarm, self).__init__(application, configuration)
         self.name = name
         self.policy = policy
-        self.configuration["alarm_actions"] = [policy.get_policy_arn()]
+        self.configuration["alarm_actions"] = policy.get_policy_arn()
         if 'dimensions' not in self.configuration:
             self.configuration["dimensions"] = {"AutoScalingGroupName": policy.get_group_name()}
 
