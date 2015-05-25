@@ -591,7 +591,7 @@ class EC2AutoScaleGroup(EC2AutoScale):
             self.group.max_size = self.configuration['max_size']
             self.group.min_size = self.configuration['min_size']
             self.group.load_balancers = self.configuration['load_balancers']
-            self.group.default_cooldown = self.configuration['default_cooldown']
+            self.group.default_cooldown = self.configuration.get('default_cooldown', None)
             self.group.termination_policies = self.configuration['termination_policies']
             self.group.update()
             self.group = self._get_autoscaling_group()
@@ -724,7 +724,7 @@ class CloudWatchMetricAlarm(CloudWatch):
         super(CloudWatchMetricAlarm, self).__init__(application, configuration)
         self.name = name
         self.policy = policy
-        self.configuration["alarm_actions"] = [policy.get_policy_arn()]
+        self.configuration["alarm_actions"] = policy.get_policy_arn()
         if 'dimensions' not in self.configuration:
             self.configuration["dimensions"] = {"AutoScalingGroupName": policy.get_group_name()}
 
