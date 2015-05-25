@@ -68,8 +68,12 @@ def get_deployer_from_strategy(strategy, application, configuration, extra_args=
     )
 
 
+def get_configuration_file_path():
+    return os.path.abspath(os.path.expanduser('~/.forseti/config.json'))
+
+
 def read_configuration_file():
-    config_path = os.path.abspath(os.path.expanduser('~/.forseti/config.json'))
+    config_path = get_configuration_file_path()
     if not os.path.exists(config_path):
         raise ValueError("Configuration file does not exist at %r" % config_path)
 
@@ -78,6 +82,13 @@ def read_configuration_file():
     except ValueError as exception:
         print "Invalid JSON configuration file %s\n" % config_path
         raise exception
+
+
+def write_configuration_file(forseti_configuration):
+    config_path = get_configuration_file_path()
+
+    with open(config_path, 'w') as config_file:
+        config_file.write(forseti_configuration.dump(pretty=True))
 
 
 def main():
