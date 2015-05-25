@@ -275,6 +275,8 @@ class ForsetiConfiguration(object):
             launch_configuration
         )
         self.application_names.append(application_name)
+        self.autoscale_group_names.extend(group_configuration.keys())
+        self.launch_configuration_names.extend(launch_configuration.keys())
 
     def dump(self, pretty=False):
         """
