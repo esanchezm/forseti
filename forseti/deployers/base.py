@@ -219,7 +219,7 @@ class BaseDeployer(object):
         pass
 
     @abc.abstractmethod
-    def init(self, instance_id, no_reboot=False):
+    def init_application(self, instance_id, no_reboot=False):
         """
         Initialize an application and autoscale group
         """
