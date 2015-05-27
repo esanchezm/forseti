@@ -30,36 +30,6 @@ from jinja2 import Template
 import os.path
 
 
-def get_deployer(application, configuration, extra_args=None):
-    application_configuration = configuration.get_application_configuration(application)
-    if configuration.DEPLOYMENT_STRATEGY not in application_configuration:
-        raise ForsetiConfigurationException(
-            'Missing %s in application configuration' %
-            configuration.DEPLOYMENT_STRATEGY
-        )
-    strategy = application_configuration[configuration.DEPLOYMENT_STRATEGY]
-    extra_args = extra_args or []
-    extra_args = ' '.join(extra_args)
-
-    return get_deployer_from_strategy(
-        strategy,
-        application,
-        configuration,
-        extra_args
-    )
-
-
-def get_deployer_from_strategy(strategy, application, configuration, extra_args=None):
-    if strategy == 'deploy_and_snapshot':
-        return DeployAndSnapshotDeployer(application, configuration, extra_args)
-    if strategy == 'golden_instances':
-        return GoldenInstanceDeployer(application, configuration, extra_args)
-
-    raise ForsetiConfigurationException(
-        'Unknown deployment strategy \'%s\' in application configuration' % strategy
-    )
-
-
 def get_configuration_file_path():
     return os.path.abspath(os.path.expanduser('~/.forseti/config.json'))
 
