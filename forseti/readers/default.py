@@ -24,10 +24,10 @@ class DefaultReader(object):
         'Terminating': 'yellow',
     }
 
-    def __init__(self, configuration, *args, **kwargs):
+    def __init__(self, configuration, format=None, *args, **kwargs):
         self.configuration = configuration
         self.term = Terminal()
-        format = kwargs['format'] or 'tree'
+        format = format or 'tree'
         self.formatter = self.get_formatter(format)
 
     def get_formatter(self, format):
