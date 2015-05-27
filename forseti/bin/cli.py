@@ -2,30 +2,21 @@
 """Forseti is a tool to manage AWS autoscaling groups.
 
 Usage:
-    forseti.py init <app> <instance-id> --deployer=deploy_and_snapshot|golden_instances [--no-reboot-instance]
-    forseti.py deploy <app> [--ami=<ami-id>] [-- <args>...]
-    forseti.py status <app> [--daemon] [--activities=<amount>] [--format=<format>]
-    forseti.py list_configurations [<app>]
-    forseti.py cleanup_configurations [<app>] [--desired_configurations=<desired>]
-    forseti.py regenerate <app>
-    forseti.py maintenance <app> (on|off)
-    forseti.py (-h | --help)
-    forseti.py --version
+    {% for doc in commands_documentation -%}
+    forseti {{ doc }}
+    {% endfor -%}
+    forseti (-h | --help)
+    forseti --version
 
 Options:
-    --ami=<ami-id>        AMI id to be used instead of creating a golden one.
-    --daemon              Keep running and updating the status
-    --activities=<amount> Number of latest activities to show
-    --desired_configurations=<desired> Number of launch configurations you
-                          want to leave when doing a cleanup [default: 4]
-    --format=<format>     How to format the status.
-                          Available values are: plain, json, tree (default)
+    {% for doc in options_documentation -%}
+    {{ doc }}
+    {% endfor -%}
     -h --help             Show this screen.
     --version             Show version.
-    -- <args>...          Extra parameters to be passed to the deploy command
 """
 
-import json
+import sys
 from docopt import docopt
 from forseti import __version__ as forseti_version
 from forseti.configuration import ForsetiConfiguration
@@ -33,9 +24,9 @@ from forseti.deployers import (
     DeployAndSnapshotDeployer,
     GoldenInstanceDeployer,
 )
-from forseti.commands import MaintenanceCommand
+from forseti.commands.base import get_all_commands
 from forseti.exceptions import ForsetiConfigurationException
-from forseti.readers import DefaultReader
+from jinja2 import Template
 import os.path
 
 
@@ -54,7 +45,7 @@ def get_deployer(application, configuration, extra_args=None):
         strategy,
         application,
         configuration,
-        extra_args=None
+        extra_args
     )
 
 
@@ -79,94 +70,54 @@ def read_configuration_file():
         raise ValueError("Configuration file does not exist at %r" % config_path)
 
     try:
-        return ForsetiConfiguration(json.load(open(config_path)))
+        return ForsetiConfiguration(config_path)
     except ValueError as exception:
         print "Invalid JSON configuration file %s\n" % config_path
         raise exception
 
 
-def write_configuration_file(forseti_configuration):
-    config_path = get_configuration_file_path()
+def generate_dosctring():
+    commands_documentation = []
+    options_documentation = []
 
-    with open(config_path, 'w') as config_file:
-        config_file.write(forseti_configuration.dump(pretty=True))
+    commands = get_all_commands()
+    for command_class in commands:
+        command = command_class()
+        command_doc = command.cli_command_doc()
+        if command_doc:
+            commands_documentation.append(command_doc)
+        command_doc = command.cli_command_options_doc()
+        if command_doc:
+            options_documentation.append(command_doc)
+
+    return Template(__doc__).render(
+        commands_documentation=commands_documentation,
+        options_documentation=options_documentation,
+        app_name=sys.argv[0]
+    )
+
+
+def commands_arguments_mapper():
+    mapper = []
+    commands = get_all_commands()
+    for command_class in commands:
+        command = command_class()
+        mapper.append((command.cli_command(), command))
+
+    return mapper
 
 
 def main():
-    arguments = docopt(__doc__)
+    arguments = docopt(generate_dosctring())
+    if arguments['--version']:
+        print "Forseti %s" % forseti_version
+        return
 
     configuration = read_configuration_file()
 
-    if arguments['deploy']:
-        deployer = get_deployer(
-            arguments['<app>'],
-            configuration,
-            arguments['<args>']
-        )
-        deployer.deploy(arguments['--ami'])
-    elif arguments['status']:
-        format = arguments['--format']
-        reader = DefaultReader(configuration, format=format)
-        daemon = arguments['--daemon']
-        activities = arguments['--activities']
-        reader.status(arguments['<app>'], daemon=daemon, activities=activities)
-    elif arguments['list_configurations']:
-        if arguments['<app>']:
-            applications = [arguments['<app>']]
-        else:
-            applications = configuration.applications.keys()
-
-        for application in applications:
-            print "\nApplication: %s" % application
-            print "============="
-            deployer = get_deployer(
-                application,
-                configuration,
-            )
-            deployer.list_autoscale_configurations()
-    elif arguments['cleanup_configurations']:
-        if arguments['<app>']:
-            applications = [arguments['<app>']]
-        else:
-            applications = configuration.applications.keys()
-
-        for application in applications:
-            print "\nApplication: %s" % application
-            print "============="
-            deployer = get_deployer(
-                application,
-                configuration,
-            )
-            deployer.cleanup_autoscale_configurations(
-                int(arguments['--desired_configurations'])
-            )
-    elif arguments['regenerate']:
-        deployer = get_deployer(
-            arguments['<app>'],
-            configuration,
-        )
-        deployer.regenerate()
-    elif arguments['maintenance']:
-        maintenance = MaintenanceCommand(configuration, arguments['<app>'])
-        if arguments['on']:
-            maintenance.on()
-        else:
-            maintenance.off()
-    elif arguments['init']:
-        deployer = get_deployer_from_strategy(
-            arguments['--deployer'],
-            arguments['<app>'],
-            configuration
-        )
-
-        deployer.init_application(
-            arguments['<instance-id>'],
-            arguments['--no-reboot-instance']
-        )
-
-        write_configuration_file(configuration)
-    elif arguments['--version']:
-        print "Forseti %s" % forseti_version
+    for cli_command, forseti_command in commands_arguments_mapper():
+        if arguments[cli_command]:
+            forseti_command.run(configuration, arguments)
 
 
 if __name__ == '__main__':
