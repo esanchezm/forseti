@@ -164,20 +164,6 @@ class BaseDeployer(object):
                 print "Deleting launch configuration %s" % configuration.name
                 configuration.delete()
 
-    def list_autoscale_configurations(self):
-        """
-        List all the launch configurations of the autoscaling group belonging
-        to the application
-        """
-        self.autoscale_group_name = self.application_configuration['autoscale_group']
-        group = self._get_autoscaling_group()
-        configurations = group.get_all_launch_configurations()
-        for configuration in configurations:
-            ami = configuration.ami()
-            print "- %s " % configuration.name
-            print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
-            print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
-
     def send_sns_message(self, message, subject=None, extra_attributes=None):
         """
         """

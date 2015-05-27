@@ -132,3 +132,20 @@ class DefaultReader(object):
                 running = False
             finally:
                 self.term.exit_fullscreen()
+
+    def list_autoscale_configurations(self, application):
+        """
+        List all the launch configurations of the autoscaling group belonging
+        to the application
+        """
+        group = EC2AutoScaleGroup(
+            self.configuration.get_autoscale_group(application),
+            application,
+            self.configuration.get_autoscale_group_configuration(application)
+        )
+        configurations = group.get_all_launch_configurations()
+        for configuration in configurations:
+            ami = configuration.ami()
+            print "- %s " % configuration.name
+            print "\t- AMI: %s " % (ami.ami_id if ami.ami_id else "Unknown")
+            print "\t- Snapshot: %s " % (ami.snapshot_id if ami.snapshot_id else "Unknown")
