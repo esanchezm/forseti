@@ -13,7 +13,7 @@ class BaseForsetiCommand(object):
         raise NotImplementedError
 
     @abstractmethod
-    def cli_command(self):
+    def cli_command_name(self):
         raise NotImplementedError
 
     @abstractmethod

@@ -56,9 +56,9 @@ def generate_dosctring():
         command_doc = command.cli_command_doc()
         if command_doc:
             commands_documentation.append(command_doc)
-        command_doc = command.cli_command_options_doc()
-        if command_doc:
-            options_documentation.append(command_doc)
+        comand_options_docs = command.cli_command_options_doc()
+        if comand_options_docs:
+            options_documentation.append(comand_options_docs)
 
     return Template(__doc__).render(
         commands_documentation=commands_documentation,
@@ -72,7 +72,9 @@ def commands_arguments_mapper():
     commands = get_all_commands()
     for command_class in commands:
         command = command_class()
-        mapper.append((command.cli_command(), command))
+        mapper.append(
+            (command.cli_command_name(), command)
+        )
 
     return mapper
 

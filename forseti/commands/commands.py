@@ -1,7 +1,6 @@
 import os
 
 from .base import BaseForsetiCommand
-
 from forseti.deployers import (
     DeployAndSnapshotDeployer,
     GoldenInstanceDeployer,
@@ -63,11 +62,11 @@ class MaintenanceCommand(BaseForsetiCommand):
 
 
 class MaintenanceCommandOn(MaintenanceCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "maintenance_on"
 
     def cli_command_doc(self):
-        return "%s <app>" % self.cli_command()
+        return "%s <app>" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return None
@@ -78,11 +77,11 @@ class MaintenanceCommandOn(MaintenanceCommand):
 
 
 class MaintenanceCommandOff(MaintenanceCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "maintenance_off"
 
     def cli_command_doc(self):
-        return "%s <app>" % self.cli_command()
+        return "%s <app>" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return None
@@ -93,7 +92,7 @@ class MaintenanceCommandOff(MaintenanceCommand):
 
 
 class BaseDeployCommand(BaseForsetiCommand):
-    def get_deployer(self, application, configuration, extra_args=None):
+    def _get_deployer(self, application, configuration, extra_args=None):
         application_configuration = configuration.get_application_configuration(application)
         if configuration.DEPLOYMENT_STRATEGY not in application_configuration:
             raise ForsetiConfigurationException(
@@ -104,23 +103,19 @@ class BaseDeployCommand(BaseForsetiCommand):
         extra_args = extra_args or []
         extra_args = ' '.join(extra_args)
 
-        return self.get_deployer_from_strategy(
+        return self._get_deployer_from_strategy(
             strategy,
             application,
             configuration,
             extra_args
         )
 
-    def get_deployer_from_strategy(
-        self,
-        strategy,
-        application,
-        configuration,
-        extra_args=None
+    def _get_deployer_from_strategy(
+        self, strategy, application, configuration, extra_args=None
     ):
         if strategy == 'deploy_and_snapshot':
             return DeployAndSnapshotDeployer(application, configuration, extra_args)
-        if strategy == 'golden_instances':
+        elif strategy == 'golden_instances':
             return GoldenInstanceDeployer(application, configuration, extra_args)
 
         raise ForsetiConfigurationException(
@@ -129,17 +124,17 @@ class BaseDeployCommand(BaseForsetiCommand):
 
 
 class DeployCommand(BaseDeployCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "deploy"
 
     def cli_command_doc(self):
-        return "%s <app>  [--ami=<ami-id>] [-- <args>...]" % self.cli_command()
+        return "%s <app>  [--ami=<ami-id>] [-- <args>...]" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return "--ami=<ami-id>        AMI id to be used instead of creating a golden one."
 
     def run(self, configuration, cli_arguments):
-        deployer = self.get_deployer(
+        deployer = self._get_deployer(
             cli_arguments['<app>'],
             configuration,
             cli_arguments
@@ -148,11 +143,11 @@ class DeployCommand(BaseDeployCommand):
 
 
 class InitCommand(BaseDeployCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "init"
 
     def cli_command_doc(self):
-        return "%s <app> <instance-id> --deployer=deploy_and_snapshot|golden_instances [--no-reboot-instance]" % self.cli_command()
+        return "%s <app> <instance-id> --deployer=deploy_and_snapshot|golden_instances [--no-reboot-instance]" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return """--no-reboot-instance  No reboot instance when creating AMI
@@ -160,7 +155,7 @@ class InitCommand(BaseDeployCommand):
                           What deployer to use in the new application"""
 
     def run(self, configuration, cli_arguments):
-        deployer = self.get_deployer_from_strategy(
+        deployer = self._get_deployer_from_strategy(
             cli_arguments['--deployer'],
             cli_arguments['<app>'],
             configuration
@@ -174,11 +169,11 @@ class InitCommand(BaseDeployCommand):
 
 
 class CleanUpAutoscaleConfigurationsCommand(BaseDeployCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "cleanup_configurations"
 
     def cli_command_doc(self):
-        return "%s [<app>] [--desired_configurations=<desired>]" % self.cli_command()
+        return "%s [<app>] [--desired_configurations=<desired>]" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return """--desired_configurations=<desired> Number of launch configurations you
@@ -193,7 +188,7 @@ class CleanUpAutoscaleConfigurationsCommand(BaseDeployCommand):
         for application in applications:
             print "\nApplication: %s" % application
             print "============="
-            deployer = self.get_deployer(
+            deployer = self._get_deployer(
                 application,
                 configuration,
             )
@@ -203,17 +198,17 @@ class CleanUpAutoscaleConfigurationsCommand(BaseDeployCommand):
 
 
 class RegenerateAutoscalegroupCommand(BaseDeployCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "regenerate"
 
     def cli_command_doc(self):
-        return "%s  <app>" % self.cli_command()
+        return "%s  <app>" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return None
 
     def run(self, configuration, cli_arguments):
-        deployer = self.get_deployer(
+        deployer = self._get_deployer(
             cli_arguments['<app>'],
             configuration,
         )
@@ -221,11 +216,11 @@ class RegenerateAutoscalegroupCommand(BaseDeployCommand):
 
 
 class StatusCommand(BaseForsetiCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "status"
 
     def cli_command_doc(self):
-        return "%s <app> [--daemon] [--activities=<amount>] [--format=<format>]" % self.cli_command()
+        return "%s <app> [--daemon] [--activities=<amount>] [--format=<format>]" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return """--activities=<amount> Number of latest activities to show
@@ -241,11 +236,11 @@ class StatusCommand(BaseForsetiCommand):
 
 
 class ListAutoscaleConfigurationsCommand(BaseForsetiCommand):
-    def cli_command(self):
+    def cli_command_name(self):
         return "list_configurations"
 
     def cli_command_doc(self):
-        return "%s [<app>]" % self.cli_command()
+        return "%s [<app>]" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return None
