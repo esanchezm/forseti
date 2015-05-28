@@ -2,14 +2,14 @@
 """Forseti is a tool to manage AWS autoscaling groups.
 
 Usage:
-    {% for doc in commands_documentation -%}
+    {% for doc in command_docs -%}
     forseti {{ doc }}
     {% endfor -%}
     forseti (-h | --help)
     forseti --version
 
 Options:
-    {% for doc in options_documentation -%}
+    {% for doc in command_options -%}
     {{ doc }}
     {% endfor -%}
     -h --help             Show this screen.
@@ -56,8 +56,8 @@ def generate_dosctring():
             options_documentation.append(comand_options_docs)
 
     return Template(__doc__).render(
-        commands_documentation=commands_documentation,
-        options_documentation=options_documentation,
+        command_docs=commands_documentation,
+        command_options=options_documentation,
         app_name=sys.argv[0]
     )
 
