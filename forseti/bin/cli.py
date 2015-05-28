@@ -20,12 +20,7 @@ import sys
 from docopt import docopt
 from forseti import __version__ as forseti_version
 from forseti.configuration import ForsetiConfiguration
-from forseti.deployers import (
-    DeployAndSnapshotDeployer,
-    GoldenInstanceDeployer,
-)
 from forseti.commands.base import get_all_commands
-from forseti.exceptions import ForsetiConfigurationException
 from jinja2 import Template
 import os.path
 
