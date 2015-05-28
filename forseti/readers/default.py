@@ -12,7 +12,7 @@ from datetime import datetime
 
 class DefaultReader(object):
     """
-    Autoscaling status reading
+    Autoscaling status reader
     """
 
     # FIXME: These values could be defined in forseti models
