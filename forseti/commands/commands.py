@@ -10,7 +10,7 @@ from forseti.models import EC2AutoScaleGroup
 from forseti.readers import DefaultReader
 
 
-class MaintenanceCommand(BaseForsetiCommand):
+class BaseMaintenanceCommand(BaseForsetiCommand):
 
     def _running_instances_dns_names(self):
         autoscale_group_name = self.configuration.get_autoscale_group(self.application)
@@ -61,7 +61,7 @@ class MaintenanceCommand(BaseForsetiCommand):
             raise e
 
 
-class MaintenanceCommandOn(MaintenanceCommand):
+class MaintenanceCommandOn(BaseMaintenanceCommand):
     def cli_command_name(self):
         return "maintenance_on"
 
@@ -76,7 +76,7 @@ class MaintenanceCommandOn(MaintenanceCommand):
         self.on(application, configuration)
 
 
-class MaintenanceCommandOff(MaintenanceCommand):
+class MaintenanceCommandOff(BaseMaintenanceCommand):
     def cli_command_name(self):
         return "maintenance_off"
 
