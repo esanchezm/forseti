@@ -26,9 +26,10 @@ class ForsetiConfiguration(object):
     DEPLOYMENT_STRATEGY = 'deployment_strategy'
     SNS_ARN = 'sns_notification_arn'
 
-    def __init__(self, forseti_configuration):
+    def __init__(self, filepath):
         super(ForsetiConfiguration, self).__init__()
-        self.forseti_configuration = forseti_configuration
+        self.filepath = filepath
+        self.forseti_configuration = json.load(open(filepath))
         self.applications = {}
         self.application_names = []
         self.autoscale_groups = {}
@@ -291,3 +292,12 @@ class ForsetiConfiguration(object):
             }
 
         return json.dumps(self.forseti_configuration, **kwargs)
+
+    def write(self, filepath=None):
+        """
+        Dumps the configuration into a JSON
+        """
+        filepath = filepath or self.filepath
+
+        with open(filepath, 'w') as config_file:
+            config_file.write(forseti_configuration.dump(pretty=True))

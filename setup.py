@@ -12,6 +12,7 @@ setup(
         'blessings',
         'docopt',
         'boto',
+        'jinja2',
         'paramiko',
         'progressbar',
     ],

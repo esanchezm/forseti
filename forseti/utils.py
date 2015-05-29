@@ -2,11 +2,6 @@ from contextlib import contextmanager
 import json
 from pprint import pformat
 import progressbar
-# import fish  # We will use fish soon ;)
-
-
-# class Duck(fish.SwimFishTimeSync, fish.DuckLook):
-#     pass
 
 
 class Balloon(progressbar.ProgressBar):
