@@ -17,7 +17,7 @@ setup(
     install_requires=[[req.strip() for req in open('requirements/base.txt').readlines()]],
     entry_points={
         'console_scripts': [
-            'forseti = forseti.bin.cli:main'
+            'forseti = forseti.cli:main'
         ]
     },
     classifiers=[
