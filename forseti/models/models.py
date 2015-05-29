@@ -70,7 +70,9 @@ class EC2Instance(EC2):
     EC2 Instance
     """
 
-    def __init__(self, application, configuration=None, resource=None, instance_id=None):
+    def __init__(
+        self, application, configuration=None, resource=None, instance_id=None
+    ):
         super(EC2Instance, self).__init__(application, configuration, resource)
         self.instance_id = instance_id
         if self.instance_id:
@@ -102,7 +104,9 @@ class EC2Instance(EC2):
         is set.
         """
         if self.instance and self.instance_id:
-            raise EC2InstanceException("Instance %s is already running" % self.instance.id)
+            raise EC2InstanceException(
+                "Instance %s is already running" % self.instance.id
+            )
 
         print "Starting instance"
         self.resource = self.ec2.run_instances(**self.configuration)
@@ -226,7 +230,9 @@ class GoldenEC2Instance(EC2Instance):
             self.instance.add_tag('forseti:application', self.application)
             self.instance.add_tag('forseti:date', self.today)
         else:
-            raise EC2InstanceException("Golden instance %s could not be launched" % self.instance.id)
+            raise EC2InstanceException(
+                "Golden instance %s could not be launched" % self.instance.id
+            )
 
     def is_ssh_running(self):
         """
@@ -252,8 +258,8 @@ class GoldenEC2Instance(EC2Instance):
 
     def provision(self, deployer_args=None):
         """
-        Provisions machine using `command` specified in configuration file, `command` is
-        executed locally within `working_directory` specified path.
+        Provisions machine using `command` specified in configuration file,
+        `command` is executed locally within `working_directory` specified path.
 
         Some extra arguments can be passed to the command by
         using `deployer_args`
@@ -320,8 +326,8 @@ class EC2AutoScaleConfig(EC2AutoScale):
     def create(self):
         """
         Creates a launch configuration using configuration file. It will update
-        the autocale configuration `name` property by appending the current date
-        and a version
+        the autocale configuration `name` property by appending the current
+        date and a version
         """
         version = 1
         found = False
@@ -334,7 +340,10 @@ class EC2AutoScaleConfig(EC2AutoScale):
                 found = True
 
         self.name = name
-        launch_configuration = LaunchConfiguration(name=self.name, **self.configuration)
+        launch_configuration = LaunchConfiguration(
+            name=self.name,
+            **self.configuration
+        )
         self.resource = self.autoscale.create_launch_configuration(launch_configuration)
 
     def delete(self):
@@ -343,7 +352,7 @@ class EC2AutoScaleConfig(EC2AutoScale):
         """
         try:
             self.ami().delete()
-        except EC2ResponseError as e:
+        except EC2ResponseError:
             print "The AMI %s could not be deleted" % self.resource.image_id
 
         self.autoscale.delete_launch_configuration(self.name)
@@ -382,8 +391,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def _get_autoscaling_group(self):
         """
-        Returns a current `boto.ec2.autoscale.group.AutoScalingGroup` instance associated to
-        the instance of this class
+        Returns a current `boto.ec2.autoscale.group.AutoScalingGroup` instance
+        associated to the instance of this class
         """
         groups = self.autoscale.get_all_groups(names=[self.name])
         if groups:
@@ -392,7 +401,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def load_balancers(self):
         """
-        Returns a list of `ELBBalancer` instances associated to the autoscale group
+        Returns a list of `ELBBalancer` instances associated to the autoscale
+        group
         """
         self.group = self._get_autoscaling_group()
         if not self.group.load_balancers:
@@ -405,7 +415,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def get_instances_with_status(self, status):
         """
-        Get a list of instances in this autoscale group whose status matches `status`
+        Get a list of instances in this autoscale group whose status matches
+        `status`
         """
         group = self._get_autoscaling_group()
         if group is None:
@@ -424,22 +435,26 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def get_instances_dns_names_with_status(self, status):
         """
-        Get a list of public DNS names of the instances within this autoscale group
-        whose status matches `status`
+        Get a list of public DNS names of the instances within this autoscale
+        group whose status matches `status`
         """
         running_instances_ec2_names = self.get_instances_with_status(status)
 
         dns_names = []
         for instance_id in running_instances_ec2_names:
             dns_names.append(
-                EC2Instance(self.application, configuration=None, instance_id=instance_id).instance.public_dns_name
+                EC2Instance(
+                    self.application,
+                    configuration=None,
+                    instance_id=instance_id
+                ).instance.public_dns_name
             )
         return dns_names
 
     def increase_desired_capacity(self):
         """
-        Increases the autoscale group desired capacity and max_size, this implies launching
-        new EC2 instances
+        Increases the autoscale group desired capacity and max_size, this
+        implies launching new EC2 instances
 
         Current policy: "Las gallinas que entran por las que salen"
         """
@@ -485,7 +500,10 @@ class EC2AutoScaleGroup(EC2AutoScale):
             for elb in elbs:
                 elb.deregister_instances(instances_ids)
                 if wait:
-                    elb.wait_for_instances_with_health(instances_ids, health='OutOfService')
+                    elb.wait_for_instances_with_health(
+                        instances_ids,
+                        health='OutOfService'
+                    )
 
     def register_instance_in_load_balancers(self, instances, wait=True):
         """
@@ -497,11 +515,15 @@ class EC2AutoScaleGroup(EC2AutoScale):
             for elb in elbs:
                 elb.register_instances(instances_ids)
                 if wait:
-                    elb.wait_for_instances_with_health(instances_ids, health='InService')
+                    elb.wait_for_instances_with_health(
+                        instances_ids,
+                        health='InService'
+                    )
 
     def wait_for_new_instances_ready(self):
         """
-        Wait for instances launched by autoscale group to be up, running and in the balancer
+        Wait for instances launched by autoscale group to be up, running and
+        in the balancer
         """
         with balloon_timer("Waiting for new instances until they're up and running") as balloon:
             i = 0
@@ -545,12 +567,15 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def apply_launch_configuration_for_deployment(self):
         """
-        Applies changes to current autoscale group launch configuration for creating new instances:
+        Applies changes to current autoscale group launch configuration for
+        creating new instances:
 
-        * First, increases desired capacity, therefore autoscale group grows with the new launch
-        configuration
-        * Then, we wait for the new instances being booted to be ready and in the balancer
-        * Finally, we terminate older instances by restoring initial capacity in autoscale group
+        * First, increases desired capacity, therefore autoscale group grows
+        with the new launch configuration
+        * Then, we wait for the new instances being booted to be ready and in
+        the balancer
+        * Finally, we terminate older instances by restoring initial capacity
+        in autoscale group
         """
         instances_ids = self.get_instances_with_status('running')
         self.increase_desired_capacity()
@@ -559,12 +584,15 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def update_or_create(self):
         """
-        Creates autoscaling group and sets a `propagate_at_launch` tag for future instances
-        the autoscale group boots
+        Creates autoscaling group and sets a `propagate_at_launch` tag for
+        future instances the autoscale group boots
         """
         self.group = self._get_autoscaling_group()
         if self.group is None:
-            autoscaling_group = AutoScalingGroup(group_name=self.name, **self.configuration)
+            autoscaling_group = AutoScalingGroup(
+                group_name=self.name,
+                **self.configuration
+            )
             self.resource = self.autoscale.create_auto_scaling_group(autoscaling_group)
             self.group = self._get_autoscaling_group()
             name_tag = Tag(
@@ -659,8 +687,9 @@ class EC2AutoScaleGroup(EC2AutoScale):
         all_configurations = self.autoscale.get_all_launch_configurations()
         configurations_for_this_group = []
         while True:
-            # I have to do this because AWS don't let you tag launch configurations.
-            # Beware with false positives in case you have similar names
+            # I have to do this because AWS don't let you tag launch
+            # configurations. Beware with false positives in case you have
+            # similar names
             regex = r"^%s-\d{4}-\d{2}-\d{2}-\d+" % self.name
             for resource in all_configurations:
                 # The configuration name starts with the group name and a dash
@@ -695,7 +724,8 @@ class EC2AutoScalePolicy(EC2AutoScale):
         :param name: Autoscale policy name
         :param configuration: Dictionary containing configuration
         :param application: Application name
-        :param group: `EC2AutoScaleGroup` instance to which the policy will be applied
+        :param group: `EC2AutoScaleGroup` instance to which the policy will be
+                                          applied
         """
         super(EC2AutoScalePolicy, self).__init__(name, application, configuration)
         self.group = group
@@ -704,12 +734,16 @@ class EC2AutoScalePolicy(EC2AutoScale):
 
     def update_or_create(self):
         """
-        Creates the scaling policy in AWS and stores in `self.reource` a `boto.ec2.autoscale.policy.ScalingPolicy`
+        Creates the scaling policy in AWS and stores in `self.reource` a
+        `boto.ec2.autoscale.policy.ScalingPolicy`
         """
         policy = ScalingPolicy(name=self.name, **self.configuration)
         self.autoscale.create_scaling_policy(policy)
         # Refresh policy from EC2 to get ARN
-        self.resource = self.autoscale.get_all_policies(as_group=self.group.name, policy_names=[self.name])[0]
+        self.resource = self.autoscale.get_all_policies(
+            as_group=self.group.name,
+            policy_names=[self.name]
+        )[0]
 
     def get_policy_arn(self):
         return self.resource.policy_arn
@@ -729,7 +763,9 @@ class CloudWatchMetricAlarm(CloudWatch):
         self.policy = policy
         self.configuration["alarm_actions"] = policy.get_policy_arn()
         if 'dimensions' not in self.configuration:
-            self.configuration["dimensions"] = {"AutoScalingGroupName": policy.get_group_name()}
+            self.configuration["dimensions"] = {
+                "AutoScalingGroupName": policy.get_group_name()
+            }
 
     def update_or_create(self):
         alarm = MetricAlarm(name=self.name, **self.configuration)

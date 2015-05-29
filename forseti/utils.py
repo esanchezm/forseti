@@ -49,7 +49,12 @@ class JsonFormatter():
     """
 
     def display(self, content):
-        return json.dumps(content, sort_keys=False, indent=4, separators=(',', ': '))
+        return json.dumps(
+            content,
+            sort_keys=False,
+            indent=4,
+            separators=(',', ': ')
+        )
 
 
 class TreeFormatter():
@@ -86,7 +91,7 @@ class TreeFormatter():
             result += "{0}{1}: {2}\n".format(
                 indenting,
                 str(key),
-                self.display(value, indent=indent+1)
+                self.display(value, indent=indent + 1)
             )
         return result
 
@@ -96,7 +101,7 @@ class TreeFormatter():
         """
         result = '[{0}]'.format(len(content))
         for value in content:
-            result += "\n"+self.display(value, indent=indent+1)
+            result += "\n" + self.display(value, indent=indent + 1)
         return result
 
     def display(self, content, indent=0):
