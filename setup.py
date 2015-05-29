@@ -1,24 +1,23 @@
+import imp
 import forseti
 
 from setuptools import setup, find_packages
 
+metadata = imp.load_source('metadata', 'forseti/metadata.py')
 
 setup(
-    name='forseti',
-    version=forseti.__version__,
-    description="Manage your AWS autoscaling groups and policies and create AMIs for autoscaling purposes",
+    author=metadata.__author__,
+    author_email=metadata.__email__,
+    url=metadata.__url__,
+    license=metadata.__license__,
+    name=metadata.__uname__,
+    version=metadata.__version__,
+    description=metadata.__long_name__,
     long_description=open('README.md').read(),
-    install_requires=[
-        'blessings',
-        'docopt',
-        'boto',
-        'jinja2',
-        'paramiko',
-        'progressbar',
-    ],
+    install_requires=[[req.strip() for req in open('requirements/base.txt').readlines()]],
     entry_points={
         'console_scripts': [
-            'forseti = forseti.bin.cli:main'
+            'forseti = forseti.cli:main'
         ]
     },
     classifiers=[
@@ -34,10 +33,6 @@ setup(
         "Topic :: System :: Systems Administration",
     ],
     keywords=['AWS', 'EC2', 'forseti', 'boto', 'AMI'],
-    author='ticketea',
-    author_email='dev@ticketea.com',
-    url='http://github.com/ticketea/forseti',
-    license='BSD',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
