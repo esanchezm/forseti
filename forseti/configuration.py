@@ -143,7 +143,10 @@ class ForsetiConfiguration(object):
     def get_application_configuration(self, application):
         """
         Get the `application` configuration dictionary.
+
         Raises `ForsetiConfigurationException` if `application` is unknown.
+
+        :param application: Application name
         """
         if application not in self.application_names:
             return {}
@@ -155,7 +158,10 @@ class ForsetiConfiguration(object):
         Get the `application` autoscale group name.It returns only the name, not
         the autoscale group configuration. You should use `get_autoscale_group_configuration()`
         for that purpose.
+
         Raises `ForsetiConfigurationException` if `application` is unknown.
+
+        :param application: Application name
         """
         application_configuration = self.get_application_configuration(application)
         if self.AUTOSCALE_GROUP_KEY not in application_configuration:
@@ -171,8 +177,11 @@ class ForsetiConfiguration(object):
         Get the `application` scaling policies. It returns only the names, not
         the policies configuration. You should use `get_policy_configuration()`
         for that purpose.
+
         Raises `ForsetiConfigurationException` if `application` is unknown or
         it has no `SCALING_POLICIES_KEY` defined.
+
+        :param application: Application name
         """
         application_configuration = self.get_application_configuration(application)
         if self.SCALING_POLICIES_KEY not in application_configuration:
@@ -186,8 +195,11 @@ class ForsetiConfiguration(object):
     def get_gold_instance_configuration(self, application):
         """
         Get the `application` gold image configuration.
+
         Raises `ForsetiConfigurationException` if `application` is unknown or
         it has no `GOLD_KEY` defined.
+
+        :param application: Application name
         """
         application_configuration = self.get_application_configuration(application)
         if self.GOLD_KEY not in application_configuration:
@@ -201,8 +213,11 @@ class ForsetiConfiguration(object):
     def get_autoscale_group_configuration(self, application):
         """
         Get the `application` autoscale group configuration.
+
         Raises `ForsetiConfigurationException` if `application` is unknown or
         it has no `AUTOSCALE_GROUP_KEY` defined.
+
+        :param application: Application name
         """
         application_configuration = self.get_application_configuration(application)
         if self.AUTOSCALE_GROUP_KEY not in application_configuration:
@@ -224,8 +239,11 @@ class ForsetiConfiguration(object):
         Get the `application` launch configuration' configuration.
         Note that the configuration forces to use the same name for launch
         configuration and autoscale groups.
+
         Raises `ForsetiConfigurationException` if `application` is unknown or
         it has no `AUTOSCALE_GROUP_KEY` defined.
+
+        :param application: Application name
         """
         if self.AUTOSCALE_GROUP_KEY not in self.applications[application]:
             raise ForsetiConfigurationException(
@@ -244,7 +262,10 @@ class ForsetiConfiguration(object):
     def get_policy_configuration(self, policy):
         """
         Get the `policy` configuration dictionary.
+
         Raises `ForsetiConfigurationException` if `policy` is unknown.
+
+        :param policy: Policy name to be get
         """
         if policy not in self.policy_names:
             raise ForsetiConfigurationException(
@@ -289,6 +310,9 @@ class ForsetiConfiguration(object):
     def dump(self, pretty=False):
         """
         Dumps the configuration into a JSON
+
+        :param pretty: Flag to specify if the configuration will be dumped
+                       in a pretty format. `False` by default
         """
         kwargs = {}
         if pretty:
@@ -302,7 +326,11 @@ class ForsetiConfiguration(object):
 
     def write(self, filepath=None):
         """
-        Dumps the configuration into a JSON
+        Dumps the configuration into a file.
+
+        :param filepath: File to write the configuration to. By default, the
+                         configuration will be written to the same file provided
+                         in the constructor.
         """
         filepath = filepath or self.filepath
 
