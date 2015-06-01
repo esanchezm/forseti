@@ -260,15 +260,22 @@ class ForsetiConfiguration(object):
         group_configuration,
         launch_configuration
     ):
+        """
+        Adds a new application to the configuration.
+
+        :param application_name:          Name of the new application
+        :param application_configuration: Configuration of the application.
+        :param group_configuration:       Configuration of the autoscaling group
+        :param launch_configuration:      Configuration of the launch
+                                          configurationof the autoscaling group
+        """
         if application_name not in application_configuration.keys():
             raise ForsetiConfigurationException(
                 ("Incorrect application name provided. The application_name",
                  "given is not present in the application_configuration")
             )
 
-        self.forseti_configuration[self.APPLICATIONS_KEY].update(
-            application_configuration
-        )
+        self.forseti_configuration[self.APPLICATIONS_KEY][application_name] = application_configuration
         self.forseti_configuration[self.AUTOSCALE_KEY][self.GROUPS_KEY].update(
             group_configuration
         )

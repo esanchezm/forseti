@@ -203,14 +203,12 @@ class DeployAndSnapshotDeployer(BaseDeployer):
 
     def _build_application_configuration(self):
         return {
-            self.application: {
-                "autoscale_group": self.application.upper(),
-                "scaling_policies": [],
-                "deployment_strategy": self.name,
-                "deploy": {
-                    "working_directory": os.getcwd(),
-                    "command": "<add your deployment command here>",
-                }
+            "autoscale_group": self.application.upper(),
+            "scaling_policies": [],
+            "deployment_strategy": self.name,
+            "deploy": {
+                "working_directory": os.getcwd(),
+                "command": "<add your deployment command here>",
             }
         }
 
