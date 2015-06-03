@@ -114,9 +114,17 @@ class BaseDeployCommand(BaseForsetiCommand):
         self, strategy, application, configuration, extra_args=None
     ):
         if strategy == 'deploy_and_snapshot':
-            return DeployAndSnapshotDeployer(application, configuration, extra_args)
+            return DeployAndSnapshotDeployer(
+                application,
+                configuration,
+                extra_args
+            )
         elif strategy == 'golden_instances':
-            return GoldenInstanceDeployer(application, configuration, extra_args)
+            return GoldenInstanceDeployer(
+                application,
+                configuration,
+                extra_args
+            )
 
         raise ForsetiConfigurationException(
             'Unknown deployment strategy \'%s\' in application configuration' %
