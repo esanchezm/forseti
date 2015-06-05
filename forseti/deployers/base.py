@@ -3,10 +3,12 @@ import abc
 from forseti.models import (
     EC2AutoScaleGroup,
     EC2AutoScaleConfig,
+    EC2AutoScaleNotification,
     EC2AutoScalePolicy,
     CloudWatchMetricAlarm,
     SNSMessageSender
 )
+from forseti.exceptions import ForsetiException
 from forseti.utils import balloon_timer
 
 
@@ -101,6 +103,26 @@ class BaseDeployer(object):
                 alarm.update_or_create()
                 self.alarms[alarm_name] = alarm
 
+    def update_or_create_autoscale_notifications(self):
+        """
+        Update or create autoscale notifications for the application
+        """
+        notifications = self.application_configuration.get('autoscale_notifications', [])
+
+        for notification in notifications:
+            try:
+                autoscale_notification = EC2AutoScaleNotification(
+                    self.autoscale_group_name,
+                    self.application,
+                    notification.get('type', 'ALL'),
+                    notification['topic']
+                )
+            except ForsetiException as e:
+                print "Error: Could not create autoscale notification: %s" % e.message
+                continue
+
+            autoscale_notification.update_or_create()
+
     def setup_autoscale(self, ami_id):
         """
         Creates or updates the autoscale group, launch configuration, autoscaling
@@ -121,6 +143,10 @@ class BaseDeployer(object):
         print "Creating autoscale group %s" % (self.autoscale_group_name)
         group = self.update_or_create_autoscale_group(autoscale_config)
         print "Created autoscale group %s" % (self.autoscale_group_name)
+
+        print "Creating autoscale notifications"
+        self.update_or_create_autoscale_notifications()
+        print "Created autoscale notifications"
 
         print "Creating autoscale policies"
         self.update_or_create_autoscale_policies(group)
