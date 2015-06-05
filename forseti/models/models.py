@@ -14,7 +14,8 @@ from forseti.models.base import (
 from forseti.utils import balloon_timer
 from forseti.exceptions import (
     EC2InstanceException,
-    ForsetiConfigurationException
+    EC2AutoScaleException,
+    ForsetiConfigurationException,
 )
 
 from boto.ec2.autoscale import (
@@ -712,6 +713,49 @@ class EC2AutoScaleGroup(EC2AutoScale):
         configurations_for_this_group.sort(cmp=lambda x, y: x.name < y.name)
 
         return configurations_for_this_group
+
+
+class EC2AutoScaleNotification(EC2AutoScale):
+    """
+    EC2 Autoscale notification
+    """
+    LAUNCH = 'autoscaling:EC2_INSTANCE_LAUNCH'
+    LAUNCH_ERROR = 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+    TERMINATE = 'autoscaling:EC2_INSTANCE_TERMINATE'
+    TERMINATE_ERROR = 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+    TEST_NOTIFICATION = 'autoscaling:TEST_NOTIFICATION'
+
+    ALL_TYPES = [
+        LAUNCH,
+        LAUNCH_ERROR,
+        TERMINATE,
+        TERMINATE_ERROR,
+        TEST_NOTIFICATION
+    ]
+
+    def __init__(self, autoscale_group_name, application, notification_type, topic, configuration=None, resource=None):
+        super(EC2AutoScaleNotification, self).__init__(autoscale_group_name, application, configuration, resource)
+        if notification_type != 'ALL' and notification_type not in ALL_TYPES:
+            raise EC2AutoScaleException(
+                "Invalid notification_type: %s" % notification_type
+            )
+
+        if notification_type == 'ALL':
+            self.notification_types = self.ALL_TYPES
+        else:
+            self.notification_types = [notification_type]
+        self.topic = topic
+        self.autoscale_group_name = autoscale_group_name
+
+    def update_or_create(self):
+        """
+        Updates or create an autoscaling notification
+        """
+        self.autoscale.put_notification_configuration(
+            self.autoscale_group_name,
+            self.topic,
+            self.notification_types
+        )
 
 
 class EC2AutoScalePolicy(EC2AutoScale):
