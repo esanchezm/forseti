@@ -3,6 +3,7 @@ from forseti.models.models import (
     GoldenEC2Instance,
     EC2AutoScaleConfig,
     EC2AutoScaleGroup,
+    EC2AutoScaleNotification,
     EC2AutoScalePolicy,
     CloudWatchMetricAlarm,
     ELBBalancer,
