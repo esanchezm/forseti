@@ -67,7 +67,7 @@ class DeployCommand(BaseDeployCommand):
         deployer = self._get_deployer(
             cli_arguments['<app>'],
             configuration,
-            cli_arguments
+            cli_arguments['<args>']
         )
         deployer.deploy(cli_arguments['--ami'])
 
