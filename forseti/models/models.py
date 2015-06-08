@@ -134,6 +134,9 @@ class EC2Instance(EC2):
         with balloon_timer("Instance %s creating image" % self.instance.id) as balloon:
             i = 0
 
+            # FIXME: Sometimes, if the ami was created by forseti but couldn't
+            # tag it, we may have an error. It would be better to look for amis
+            # with the same name
             amis = self.ec2.get_all_images(
                 owners=['self'],
                 filters={
