@@ -459,8 +459,6 @@ class EC2AutoScaleGroup(EC2AutoScale):
         """
         Increases the autoscale group desired capacity and max_size, this
         implies launching new EC2 instances
-
-        Current policy: "Las gallinas que entran por las que salen"
         """
         with balloon_timer("Increasing desired capacity to provision new machines") as balloon:
 
@@ -526,8 +524,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def wait_for_new_instances_ready(self):
         """
-        Wait for instances launched by autoscale group to be up, running and
-        in the balancer
+        Wait for instances launched by autoscale group to be up, running and in
+        the balancer
         """
         with balloon_timer("Waiting for new instances until they're up and running") as balloon:
             i = 0
@@ -555,12 +553,16 @@ class EC2AutoScaleGroup(EC2AutoScale):
 
     def terminate_instances(self, instances_ids):
         """
-        Terminate instances that we no longer want in the autoscale group, the old ones
+        Terminate instances that we no longer want in the autoscale group, the
+        old ones
         """
         with balloon_timer("Terminating old instances") as balloon:
             for instance_id in instances_ids:
                 try:
-                    self.autoscale.terminate_instance(instance_id, decrement_capacity=True)
+                    self.autoscale.terminate_instance(
+                        instance_id,
+                        decrement_capacity=True
+                    )
                 except BotoServerError:
                     pass
 
@@ -575,11 +577,11 @@ class EC2AutoScaleGroup(EC2AutoScale):
         creating new instances:
 
         * First, increases desired capacity, therefore autoscale group grows
-        with the new launch configuration
+        with the new launch configuration.
         * Then, we wait for the new instances being booted to be ready and in
-        the balancer
+        the balancer.
         * Finally, we terminate older instances by restoring initial capacity
-        in autoscale group
+        in autoscale group.
         """
         instances_ids = self.get_instances_with_status('running')
         self.increase_desired_capacity()
