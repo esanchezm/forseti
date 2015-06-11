@@ -99,3 +99,27 @@ Forseti commands system is extendible system so anyone can create their own comm
             * ``json``: JSON formatter.
 
             * ``plain``: Plain format.
+
+.. program:: forseti list_configurations
+
+.. option:: list_configurations
+
+    This command will print all the autoscaling launch configurations. You can also get only the configurations of a specific application.
+
+    **Options**:
+
+        * ``application``: Application name to get the autoscaling launch configurations.
+
+.. program:: forseti cleanup_configurations
+
+.. option:: list_configurations
+
+    Delete the autoscaling launch configurations to clean up AWS and avoid reaching theirs limit. By default it will remove launch configurations from all the applications, you can do it in only one application too.
+
+    AWS has some soft limitations with the number of autoscaling elements you can create. The default limit for autoscaling launch configurations is 50, and considering that each deploy will create a new one, you may reach that limit sooner or later. This command will help you removing old launch configurations and freeing some space and resources.
+
+    **Options**:
+
+        * ``application``: Application name to delete the autoscaling launch configurations.
+
+        * ``--desired_configurations=<desired>``: Number of launch configurations to leave.
