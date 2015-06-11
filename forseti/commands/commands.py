@@ -136,7 +136,7 @@ class RegenerateAutoscalegroupCommand(BaseDeployCommand):
         return "regenerate"
 
     def cli_command_doc(self):
-        return "%s  <app>" % self.cli_command_name()
+        return "%s <app>" % self.cli_command_name()
 
     def cli_command_options_doc(self):
         return None
