@@ -38,6 +38,7 @@ class DefaultFormatter():
     """
     Class to display a variable beautifully
     """
+    use_color = False
 
     def display(self, content):
         return pformat(content)
@@ -47,6 +48,7 @@ class JsonFormatter():
     """
     Class to display a variable beautifully using a JSON formatter
     """
+    use_color = False
 
     def display(self, content):
         return json.dumps(
@@ -80,6 +82,7 @@ class TreeFormatter():
 
     `
     """
+    use_color = True
 
     def _render_dict(self, content, indent=0):
         """

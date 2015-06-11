@@ -118,15 +118,17 @@ class DefaultReader(object):
             self.configuration.get_autoscale_group_configuration(application)
         )
 
+        use_color = self.formatter.use_color
+
         if not daemon:
-            return self._print_status(group, max_activities)
+            return self._print_status(group, max_activities, color=use_color)
 
         # Daemon case will print the status in a fullscreen terminal forever
         running = True
         while running:
             try:
                 with self.term.fullscreen():
-                    self._print_status(group, max_activities)
+                    self._print_status(group, max_activities, color=use_color)
                     time.sleep(1)
             except (KeyboardInterrupt, SystemExit):
                 running = False
