@@ -9,10 +9,10 @@ From Wikipedia: `Forseti` (old norse "the presiding one") is an Æsir god of jus
 
 ## Installation
 
-We recomend you to use forseti inside a virtualenv.
+We recommend you to use forseti inside a virtualenv.
 
 ```bash
-pip install virtualenv
+pip install virtualenv virtualenvwrapper
 mkvirtualenv forseti
 workon forseti
 ```
@@ -63,10 +63,10 @@ Forseti has a flexible deployment system, which can be expanded with different d
 
 ### Deploy and snapshot
 
-The [deploy and snapshot deployer](forseti/deployers/golden_instance.py) is the easiest way of deployment. The process is as follows:
+The [deploy and snapshot deployer](forseti/deployers/golden_instance.py) is the easiest way of deployment. The process goes as follows:
 
 - Deploy the application code on the instances belonging to an autoscale group.
-- Select a random instance on the group
+- Select a random instance of the group
 - Remove that instance from the load balancers of the autoscale group.
 - Create an AMI from it (it will reboot the instance).
 - Create a new autoscaling configuration with that new AMI.
