@@ -1,0 +1,95 @@
+{
+    "applications": {
+        "backend": {
+            "deploy": {
+                "working_directory": "/path/to/capistrano",
+                "command": "cap production deploy -S servers={dns_name}"
+            },
+            "deployment_strategy": "deploy_and_snapshot",
+            "autoscale_group": "BACKEND",
+            "scaling_policies": [
+                "scale_down_policy",
+                "scale_up_policy"
+            ],
+            "autoscale_notifications": [
+                {
+                    "topic": "arn:aws:sns:eu-west-1:1234567890AB:notifications",
+                    "type": "ALL"
+                }
+            ],
+            "sns_notification_arn": "arn:aws:sns:eu-west-1:1234567890AB:notifications",
+            "sns_extra_attributes": {
+                "ParametersForYourSNSApplication": {
+                    "Priority": "Info",
+                    "Channel": "#notifications"
+                }
+            }
+        }
+    },
+    "autoscale": {
+        "alarms": {
+            "scale_down_on_cpu": {
+                "comparison": "<",
+                "alarm_actions": "scale_down_policy",
+                "evaluation_periods": 2,
+                "metric": "CPUUtilization",
+                "namespace": "AWS/EC2",
+                "period": 300,
+                "statistic": "Average",
+                "threshold": 40
+            },
+            "scale_up_on_cpu": {
+                "comparison": ">",
+                "alarm_actions": "scale_up_policy",
+                "evaluation_periods": 1,
+                "metric": "CPUUtilization",
+                "namespace": "AWS/EC2",
+                "period": 60,
+                "statistic": "Average",
+                "threshold": 60
+            }
+        },
+        "configs": {
+            "backend": {
+                "key_name": "private-keys",
+                "instance_type": "m1.small",
+                "security_groups": [
+                    "security-group"
+                ],
+                "instance_monitoring": true
+            }
+        },
+        "groups": {
+            "BACKEND": {
+                "availability_zones": [
+                    "eu-west-1a",
+                    "eu-west-1b",
+                    "eu-west-1c"
+                ],
+                "default_cooldown": 300,
+                "termination_policies": [
+                    "ClosestToNextInstanceHour",
+                    "OldestInstance"
+                ],
+                "min_size": 1,
+                "desired_capacity": 1,
+                "load_balancers": [
+                    "backend"
+                ],
+                "max_size": 10
+            }
+        },
+        "policies": {
+            "scale_down_policy": {
+                "cooldown": 180,
+                "scaling_adjustment": -1,
+                "adjustment_type": "ChangeInCapacity"
+            },
+            "scale_up_policy": {
+                "cooldown": 180,
+                "scaling_adjustment": 3,
+                "adjustment_type": "ChangeInCapacity"
+            }
+        }
+    }
+}
