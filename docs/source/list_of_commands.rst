@@ -112,7 +112,7 @@ Forseti command system is an extensible system so anyone can create their own co
 
 .. program:: forseti cleanup_configurations
 
-.. option:: list_configurations
+.. option:: cleanup_configurations
 
     Delete the autoscaling launch configurations to clean up AWS and avoid reaching theirs limit. By default it will remove launch configurations from all the applications, you can do it in only one application too.
 
