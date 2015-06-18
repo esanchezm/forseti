@@ -75,7 +75,7 @@ All the parameters available for an autoscaling group are the same one that `bot
 .. literalinclude:: default-example.json
    :language: json
    :lines: 30-48
-   :dedent: 12
+   :dedent: 8
 
 Configurations
 ^^^^^^^^^^^^^^
@@ -85,7 +85,7 @@ Every autoscaling group has one or more launch configurations and again all the 
 .. literalinclude:: default-example.json
    :language: json
    :lines: 49-58
-   :dedent: 12
+   :dedent: 8
 
 Policies
 ^^^^^^^^
@@ -95,7 +95,7 @@ Policies defines how to scale in or out a group. You can do it in absolute numbe
 .. literalinclude:: default-example.json
    :language: json
    :lines: 59-70
-   :dedent: 12
+   :dedent: 8
 
 Alarms
 ^^^^^^
@@ -105,4 +105,4 @@ The last section defines what CloudWatch alarms will trigger the autoscaling pol
 .. literalinclude:: default-example.json
    :language: json
    :lines: 71-92
-   :dedent: 12
+   :dedent: 8
