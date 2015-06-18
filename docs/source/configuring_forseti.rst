@@ -59,3 +59,50 @@ And the last one is relative to Forseti's notifications. It can push messages to
    :language: json
    :lines: 20-26
    :dedent: 12
+
+Autoscale section
+-------------------
+
+The other part of the configuration file defines all the autoscaling elements. It's divided in four groups.
+
+Groups
+^^^^^^
+
+In this section, you'll define the autoscaling groups, ideally one per application. Keep in mind that any application you define, must have an ``autoscale_group`` key and it must reference one group inside this section.
+
+All the parameters available for an autoscaling group are the same one that `boto defines in its API <http://boto.readthedocs.org/en/latest/ref/autoscale.html#boto.ec2.autoscale.group.AutoScalingGroup>`_. We've defined some in this example and you can find the meaning of each one in the boto documentation.
+
+.. literalinclude:: default-example.json
+   :language: json
+   :lines: 30-48
+   :dedent: 12
+
+Configurations
+^^^^^^^^^^^^^^
+
+Every autoscaling group has one or more launch configurations and again all the parameters Forseti accepts are the same ones `documented in boto <http://boto.readthedocs.org/en/latest/ref/autoscale.html#boto.ec2.autoscale.launchconfig.LaunchConfiguration>`_.
+
+.. literalinclude:: default-example.json
+   :language: json
+   :lines: 49-58
+   :dedent: 12
+
+Policies
+^^^^^^^^
+
+Policies defines how to scale in or out a group. You can do it in absolute numbers and chaning the group capacity in percentual ranges, whatever fits your application needs. All the policies listed for an application must be defined here. The parameters to define a policy are once again defined in the `boto documentation regarding autoscaling policies <http://boto.readthedocs.org/en/latest/ref/autoscale.html#boto.ec2.autoscale.policy.ScalingPolicy>`_.
+
+.. literalinclude:: default-example.json
+   :language: json
+   :lines: 59-70
+   :dedent: 12
+
+Alarms
+^^^^^^
+
+The last section defines what CloudWatch alarms will trigger the autoscaling policies. In this example, we have two alarms, one that will trigger the increase of instances and another one to decrease them. The important token when defining this alarms is the ``alarm_actions``, which should refer to the autocaling policy to trigger in case the alarm fails. Creating an alarm is easy and all the parameters are defined in the `boto documentation as well <http://boto.readthedocs.org/en/latest/ref/cloudwatch.html#boto.ec2.cloudwatch.alarm.MetricAlarm>`_.
+
+.. literalinclude:: default-example.json
+   :language: json
+   :lines: 71-92
+   :dedent: 12
