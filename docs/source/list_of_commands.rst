@@ -3,7 +3,7 @@
 List of available oficial commands
 ==================================
 
-Forseti commands system is extendible system so anyone can create their own commands and operations. We've created our own commands which are bundled by default. Those commands are common operations like creating, regenerating, deploying and showing the status of an application and its autoscaling group.
+Forseti command system is an extensible system so anyone can create their own commands and operations. We've created our own set of commands which are bundled by default. Those commands are common operations like creating, regenerating, deploying and showing the status of an application and its autoscaling group.
 
 .. program:: forseti init
 

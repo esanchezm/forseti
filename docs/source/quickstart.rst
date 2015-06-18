@@ -6,7 +6,7 @@ Quickstart and first steps
 Configuring AWS access
 ----------------------
 
-The first thing you need to do is configuring your AWS credentials and the region you want to use. Forseti depends on boto, so you can read their `getting started guideling <http://boto.readthedocs.org/en/latest/getting_started.html#configuring-boto-credentials>`_ to get all the information you need. The minimum setup that Forseti requires is creating a file in `~/.boto` with this content::
+The first thing you need to do is configure your AWS credentials and the region you want to use. Forseti depends on boto, so you can read their `getting started guideling <http://boto.readthedocs.org/en/latest/getting_started.html#configuring-boto-credentials>`_ to get all the information you need. The minimum setup that Forseti requires is creating a file in `~/.boto` with this content::
 
     [Boto]
     autoscale_region_name = eu-west-1
@@ -35,9 +35,9 @@ The first thing you need to do is configuring your AWS credentials and the regio
 Setting up a Forseti application
 --------------------------------
 
-If you're already running instances in AWS, the best way to start with forseti is using the `init` command. This command will help you creating an application using an instance (it could be running or stopped)::
+If you're already running instances in AWS, the best way to start with Forseti is using the `init` command. This command will help you creating an application using an instance (it could be running or stopped)::
 
-    forseti init application_name i-xxxxxxxx --deployer=deploy_and_snapshot
+    forseti init <application_name> i-xxxxxxxx --deployer=deploy_and_snapshot
 
 This will create for you an autoscaling group, using an AMI created from the selected instance. That information will be added to the Forseti configuration file, located in `~/.forseti/config.json`. Move to :ref:`configuring_forseti`
 
