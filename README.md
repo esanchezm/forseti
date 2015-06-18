@@ -65,7 +65,7 @@ Forseti has a flexible deployment system, which can be expanded with different d
 
 ### Deploy and snapshot
 
-The [deploy and snapshot deployer](forseti/deployers/golden_instance.py) is the easiest way of deployment. The process goes as follows:
+The [deploy and snapshot deployer](forseti/deployers/deploy_and_snapshot.py) is the easiest way of deployment. The process goes as follows:
 
 - Deploy the application code on the instances belonging to an autoscale group.
 - Select a random instance of the group
