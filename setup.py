@@ -1,5 +1,4 @@
 import imp
-import forseti
 
 from setuptools import setup, find_packages
 
@@ -32,7 +31,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: System :: Systems Administration",
     ],
-    keywords=['AWS', 'EC2', 'forseti', 'boto', 'AMI'],
+    keywords=['AWS', 'EC2', 'forseti', 'boto', 'AMI', 'Auto scale'],
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,

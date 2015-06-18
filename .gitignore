@@ -22,3 +22,6 @@ tempfile
 .coverage
 _build
 htmlcov/*
+
+#docs
+docs/build
