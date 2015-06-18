@@ -57,7 +57,7 @@ sns_region_endpoint = sns.eu-west-1.amazonaws.com
 
 ### Forseti's configuration for deployment
 
-In order to use forsetì with the CLI you will need to create a `.forseti/config.json` file, you can use [default-example.json](forseti/docs/default-example.json) file as a base. But first you may need information on how Forseti works.
+In order to use forsetì with the CLI you will need to create a `.forseti/config.json` file, you can use [default-example.json](forseti/docs/source/default-example.json) file as a base. But first you may need information on how Forseti works.
 
 ## Deployers
 
