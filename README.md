@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/forseti/badge/?version=latest)](https://readthedocs.org/projects/forseti/?badge=latest)
+
 From Wikipedia: `Forseti` (old norse "the presiding one") is an Æsir god of justice and reconciliation in Norse mythology. He is generally identified with Fosite, a god of the Frisians.
 
 ## What is it?
