@@ -19,7 +19,7 @@ Forseti command system is an extensible system so anyone can create their own co
 
         .. TODO: Add link to deployers documentation
 
-        * ``--deployer``: This parameters is used to tell Forseti how to manage future deploys. For more information, please read our section about deployers.
+        * ``--deployer``: This parameter is used to tell Forseti how to manage future deploys. For more information, please read our section about deployers.
 
     **Options**:
 
@@ -114,7 +114,7 @@ Forseti command system is an extensible system so anyone can create their own co
 
 .. option:: cleanup_configurations
 
-    Delete the autoscaling launch configurations to clean up AWS and avoid reaching theirs limit. By default it will remove launch configurations from all the applications, you can do it in only one application too.
+    Delete the autoscaling launch configurations to clean up AWS and avoid reaching their limit. By default it will remove launch configurations from all the applications, you can do it in only one application too.
 
     AWS has some soft limitations with the number of autoscaling elements you can create. The default limit for autoscaling launch configurations is 50, and considering that each deploy will create a new one, you may reach that limit sooner or later. This command will help you removing old launch configurations and freeing some space and resources.
 

@@ -17,6 +17,7 @@ Contents:
    introduction
    quickstart
    configuring_forseti
+   deployers
    list_of_commands
    questions_and_answers
    license
