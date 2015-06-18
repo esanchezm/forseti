@@ -5,6 +5,8 @@ Introduction
 
 Forseti development began in 2011. We needed a tool to manage `Amazon Web Services <https://aws.amazon.com/>`_ (AWS) EC2 [1]_ auto-scale groups and at that time the web interface was lacking of support. The only way to manage autoscaling was using their API, which was very complete and well documented. We looked for third party tools but all of them were too much, with a lot of requirements, a complicated UI and a lot of effort in order to get started. We only wanted an easy CLI tool, one that did one task and did it right. And Foserti was born.
 
+.. _terminology:
+
 Terminology and basic concepts
 ------------------------------
 
