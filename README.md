@@ -80,7 +80,7 @@ You can skip any specific instance to be selected for AMI creation by adding a t
 
 ### Golden instance
 
-The [golden instance deployer](forserti/deployers/golden_instance.py) process is similar to:
+The [golden instance deployer](forseti/deployers/golden_instance.py) process is similar to:
 
 - Launch an instance with the gold AMI. This is called _golden instance_.
 - Deploy the application code on the new instance.
