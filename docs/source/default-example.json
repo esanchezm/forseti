@@ -27,6 +27,47 @@
         }
     },
     "autoscale": {
+        "groups": {
+            "BACKEND": {
+                "availability_zones": [
+                    "eu-west-1a",
+                    "eu-west-1b"
+                ],
+                "default_cooldown": 300,
+                "termination_policies": [
+                    "ClosestToNextInstanceHour",
+                    "OldestInstance"
+                ],
+                "min_size": 2,
+                "desired_capacity": 2,
+                "load_balancers": [
+                    "backend"
+                ],
+                "max_size": 10
+            }
+        },
+        "configs": {
+            "backend": {
+                "key_name": "private-keys",
+                "instance_type": "m1.small",
+                "security_groups": [
+                    "security-group"
+                ],
+                "instance_monitoring": true
+            }
+        },
+        "policies": {
+            "scale_down_policy": {
+                "cooldown": 180,
+                "scaling_adjustment": -1,
+                "adjustment_type": "ChangeInCapacity"
+            },
+            "scale_up_policy": {
+                "cooldown": 180,
+                "scaling_adjustment": 3,
+                "adjustment_type": "ChangeInCapacity"
+            }
+        },
         "alarms": {
             "scale_down_on_cpu": {
                 "comparison": "<",
@@ -47,48 +88,6 @@
                 "period": 60,
                 "statistic": "Average",
                 "threshold": 60
-            }
-        },
-        "configs": {
-            "backend": {
-                "key_name": "private-keys",
-                "instance_type": "m1.small",
-                "security_groups": [
-                    "security-group"
-                ],
-                "instance_monitoring": true
-            }
-        },
-        "groups": {
-            "BACKEND": {
-                "availability_zones": [
-                    "eu-west-1a",
-                    "eu-west-1b",
-                    "eu-west-1c"
-                ],
-                "default_cooldown": 300,
-                "termination_policies": [
-                    "ClosestToNextInstanceHour",
-                    "OldestInstance"
-                ],
-                "min_size": 1,
-                "desired_capacity": 1,
-                "load_balancers": [
-                    "backend"
-                ],
-                "max_size": 10
-            }
-        },
-        "policies": {
-            "scale_down_policy": {
-                "cooldown": 180,
-                "scaling_adjustment": -1,
-                "adjustment_type": "ChangeInCapacity"
-            },
-            "scale_up_policy": {
-                "cooldown": 180,
-                "scaling_adjustment": 3,
-                "adjustment_type": "ChangeInCapacity"
             }
         }
     }
