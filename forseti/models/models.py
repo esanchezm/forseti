@@ -655,8 +655,8 @@ class EC2AutoScaleGroup(EC2AutoScale):
             elb_status = {}
             for balancer in self.load_balancers():
                 health = balancer.get_instance_health(instance.instance_id)
-                elb_status['ELB %s status' % balancer.name] = health.state
-                elb_status['ELB %s reason' % balancer.name] = health.description
+                elb_status['ELB %s status' % balancer.name] = getattr(health, 'state', 'Unknown')
+                elb_status['ELB %s reason' % balancer.name] = getattr(health, 'description', 'Unknown')
 
             instance_status = {
                 'Id': instance.instance_id,
