@@ -11,7 +11,7 @@ class Balloon(progressbar.ProgressBar):
             progressbar.AnimatedMarker(markers='.oO@* '),
             progressbar.Timer(format=" %s")
         ]
-        super(Balloon, self).__init__(widgets=widgets, maxval=600, **kwargs)
+        super(Balloon, self).__init__(widgets=widgets, **kwargs)
         self.start()
 
 
@@ -25,8 +25,9 @@ def balloon_timer(message, **kwargs):
 
     ```
     with balloon_timer("Testing") as baloon:
-        time_elapsed = do_something()
-        baloon.update(time_elapsed)
+        while operation.not_finished():
+            time_elapsed = operation.do_something()
+            baloon.update(time_elapsed)
     ```
     """
     balloon = Balloon(message, **kwargs)
