@@ -1,4 +1,4 @@
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 __uname__ = 'forseti'
 __long_name__ = "Manage your AWS autoscaling groups and policies and create AMIs for autoscaling purposes"
 __author__ = 'ticketea'
