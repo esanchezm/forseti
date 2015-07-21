@@ -144,12 +144,22 @@ class EC2Instance(EC2):
                     'tag:forseti:date': self.today,
                 }
             )
-            ami_name = "%s-ami-%s-%s" % (self.application, self.today, len(amis) + 1)
-            ami_id = self.instance.create_image(
-                ami_name,
-                description=ami_name,
-                no_reboot=no_reboot
-            )
+            success = False
+            counter = len(amis)
+            while not success:
+                counter = counter + 1
+                ami_name = "%s-ami-%s-%s" % (self.application, self.today, counter)
+                try:
+                    ami_id = self.instance.create_image(
+                        ami_name,
+                        description=ami_name,
+                        no_reboot=no_reboot
+                    )
+                    success = True
+                except EC2ResponseError as exception:
+                    if 'is already in use by AMI' not in exception.message:
+                        raise
+
             balloon.update(i)
             i += 1
             time.sleep(1)
