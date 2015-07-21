@@ -117,9 +117,9 @@ class DeployAndSnapshotDeployer(BaseDeployer):
                 group.suspend_processes()
                 try:
                     self.deploy_instances_in_group(group)
-                except ForsetiException as exception:
+                except ForsetiException:
                     group.resume_processes()
-                    raise exception
+                    raise
                 ami_id = self.generate_ami()
 
             try:
@@ -152,9 +152,9 @@ class DeployAndSnapshotDeployer(BaseDeployer):
             instance = self.choice_instance(instances)
             group.deregister_instance_from_load_balancers([instance])
             ami_id = instance.create_image(no_reboot=False)
-        except Exception as exception:
+        except Exception:
             group.resume_processes()
-            raise exception
+            raise
         finally:
             if instance:
                 group.register_instance_in_load_balancers([instance], wait=False)
