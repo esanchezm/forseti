@@ -1,4 +1,5 @@
 import abc
+import natsort
 
 from forseti.models import (
     EC2AutoScaleGroup,
@@ -183,6 +184,7 @@ class BaseDeployer(object):
 
             # Get the first configurations minus the `desired_configurations`
             configurations_to_be_deleted = configurations[:-desired_configurations]
+            configurations_to_be_deleted = natsort.natsorted(configurations_to_be_deleted)
             for configuration in configurations_to_be_deleted:
                 self.send_sns_message(
                     "Deleting launch configuration %s" % configuration.name

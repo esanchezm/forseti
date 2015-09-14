@@ -4,3 +4,4 @@ boto
 jinja2
 paramiko
 progressbar
+natsort
